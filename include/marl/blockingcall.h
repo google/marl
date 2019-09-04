@@ -44,7 +44,7 @@ class OnNewThread<void> {
   template <typename F, typename... Args>
   inline static void call(F&& f, Args&&... args) {
     WaitGroup wg(1);
-    auto thread = std::thread([&] {
+    auto thread = std::thread([=] {
       defer(wg.done());
       f(args...);
     });

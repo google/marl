@@ -10,7 +10,7 @@ git submodule update --init
 mkdir build
 cd build
 cmake .. -DMARL_BUILD_EXAMPLES=1
-make --jobs=$(nproc)
+make -j$(sysctl -n hw.logicalcpu)
 
 ./marl-unittests
 
