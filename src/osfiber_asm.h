@@ -30,6 +30,8 @@
 #include "osfiber_asm_aarch64.h"
 #elif defined(__arm__)
 #include "osfiber_asm_arm.h"
+#elif defined(__powerpc64__)
+#include "osfiber_asm_ppc64.h"
 #else
 #error "Unsupported target"
 #endif
