@@ -22,44 +22,38 @@ namespace marl {
 namespace detail {
 
 template <typename RETURN_TYPE>
-class OnNewThread
-{
-public:
-    template <typename F, typename ... Args>
-    inline static RETURN_TYPE call(F&& f, Args&& ... args)
-    {
-        RETURN_TYPE result;
-        WaitGroup wg(1);
-        auto thread = std::thread([&]
-        {
-            defer(wg.done());
-            result = f(args...);
-        });
-        wg.wait();
-        thread.join();
-        return result;
-    }
+class OnNewThread {
+ public:
+  template <typename F, typename... Args>
+  inline static RETURN_TYPE call(F&& f, Args&&... args) {
+    RETURN_TYPE result;
+    WaitGroup wg(1);
+    auto thread = std::thread([&] {
+      defer(wg.done());
+      result = f(args...);
+    });
+    wg.wait();
+    thread.join();
+    return result;
+  }
 };
 
 template <>
-class OnNewThread<void>
-{
-public:
-    template <typename F, typename ... Args>
-    inline static void call(F&& f, Args&& ... args)
-    {
-        WaitGroup wg(1);
-        auto thread = std::thread([&]
-        {
-            defer(wg.done());
-            f(args...);
-        });
-        wg.wait();
-        thread.join();
-    }
+class OnNewThread<void> {
+ public:
+  template <typename F, typename... Args>
+  inline static void call(F&& f, Args&&... args) {
+    WaitGroup wg(1);
+    auto thread = std::thread([&] {
+      defer(wg.done());
+      f(args...);
+    });
+    wg.wait();
+    thread.join();
+  }
 };
 
-} // namespace detail
+}  // namespace detail
 
 // blocking_call() calls the function F on a new thread, yielding this fiber
 // to execute other tasks until F has returned.
@@ -77,10 +71,10 @@ public:
 //          // result holds the return value of the blocking function call.
 //      });
 //  }
-template <typename F, typename ... Args>
-auto inline blocking_call(F&& f, Args&& ... args) -> decltype(f(args...))
-{
-    return detail::OnNewThread<decltype(f(args...))>::call(std::forward<F>(f), std::forward<Args>(args)...);
+template <typename F, typename... Args>
+auto inline blocking_call(F&& f, Args&&... args) -> decltype(f(args...)) {
+  return detail::OnNewThread<decltype(f(args...))>::call(
+      std::forward<F>(f), std::forward<Args>(args)...);
 }
 
-} // namespace marl
+}  // namespace marl

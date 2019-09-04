@@ -13,7 +13,8 @@
 // limitations under the License.
 
 // Stubs SAL annotation macros for platforms that do not support them.
-// See https://docs.microsoft.com/en-us/visualstudio/code-quality/annotating-locking-behavior?view=vs-2019
+// See
+// https://docs.microsoft.com/en-us/visualstudio/code-quality/annotating-locking-behavior?view=vs-2019
 
 #ifndef marl_sal_h
 #define marl_sal_h
@@ -26,4 +27,4 @@
 #define _Requires_lock_not_held_(x)
 #endif
 
-#endif // marl_sal_h
+#endif  // marl_sal_h

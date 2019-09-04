@@ -31,59 +31,59 @@ namespace marl {
 
 // Finally is a pure virtual base class, implemented by the templated
 // FinallyImpl.
-class Finally
-{
-public:
-    virtual ~Finally() = default;
+class Finally {
+ public:
+  virtual ~Finally() = default;
 };
 
 // FinallyImpl implements a Finally.
 // The template parameter F is the function type to be called when the finally
 // is destructed. F must have the signature void().
 template <typename F>
-class FinallyImpl : public Finally
-{
-public:
-    inline FinallyImpl(const F& func);
-    inline FinallyImpl(F&& func);
-    inline FinallyImpl(FinallyImpl<F>&& other);
-    inline ~FinallyImpl();
+class FinallyImpl : public Finally {
+ public:
+  inline FinallyImpl(const F& func);
+  inline FinallyImpl(F&& func);
+  inline FinallyImpl(FinallyImpl<F>&& other);
+  inline ~FinallyImpl();
 
-private:
-    FinallyImpl(const FinallyImpl<F>& other) = delete;
-    FinallyImpl<F>& operator = (const FinallyImpl<F>& other) = delete;
-    FinallyImpl<F>& operator = (FinallyImpl<F>&&) = delete;
-    F func;
-    bool valid = true;
+ private:
+  FinallyImpl(const FinallyImpl<F>& other) = delete;
+  FinallyImpl<F>& operator=(const FinallyImpl<F>& other) = delete;
+  FinallyImpl<F>& operator=(FinallyImpl<F>&&) = delete;
+  F func;
+  bool valid = true;
 };
 
-template<typename F>
+template <typename F>
 FinallyImpl<F>::FinallyImpl(const F& func) : func(func) {}
 
-template<typename F>
+template <typename F>
 FinallyImpl<F>::FinallyImpl(F&& func) : func(std::move(func)) {}
 
-template<typename F>
-FinallyImpl<F>::FinallyImpl(FinallyImpl<F>&& other) : func(std::move(other.func))
-{
-    other.valid = false;
+template <typename F>
+FinallyImpl<F>::FinallyImpl(FinallyImpl<F>&& other)
+    : func(std::move(other.func)) {
+  other.valid = false;
 }
 
-template<typename F>
-FinallyImpl<F>::~FinallyImpl()
-{
-    if (valid)
-    {
-        func();
-    }
+template <typename F>
+FinallyImpl<F>::~FinallyImpl() {
+  if (valid) {
+    func();
+  }
 }
 
-template<typename F>
-inline FinallyImpl<F> make_finally(F&& f) { return FinallyImpl<F>(std::move(f)); }
+template <typename F>
+inline FinallyImpl<F> make_finally(F&& f) {
+  return FinallyImpl<F>(std::move(f));
+}
 
-template<typename F>
-inline std::shared_ptr<Finally> make_shared_finally(F&& f) { return std::make_shared<FinallyImpl<F>>(std::move(f)); }
+template <typename F>
+inline std::shared_ptr<Finally> make_shared_finally(F&& f) {
+  return std::make_shared<FinallyImpl<F>>(std::move(f));
+}
 
-} // namespace marl
+}  // namespace marl
 
 #endif  // marl_finally_h

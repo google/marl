@@ -27,119 +27,113 @@
 
 // A color formed from a red, green and blue component.
 template <typename T>
-struct Color
-{
-    T r, g, b;
+struct Color {
+  T r, g, b;
 
-    inline Color<T>& operator += (const Color<T>& rhs)
-    {
-        r += rhs.r; g += rhs.g; b += rhs.b;
-        return *this;
-    }
+  inline Color<T>& operator+=(const Color<T>& rhs) {
+    r += rhs.r;
+    g += rhs.g;
+    b += rhs.b;
+    return *this;
+  }
 
-    inline Color<T>& operator /= (T rhs)
-    {
-        r /= rhs; g /= rhs; b /= rhs;
-        return *this;
-    }
+  inline Color<T>& operator/=(T rhs) {
+    r /= rhs;
+    g /= rhs;
+    b /= rhs;
+    return *this;
+  }
 };
 
 // colorize returns a 'rainbow-color' for the scalar v.
-inline Color<float> colorize(float v)
-{
-    constexpr float PI = 3.141592653589793f;
-    constexpr float PI_2_THIRDS = 2.0f * PI / 3.0f;
-    return Color<float>{
-        0.5f + 0.5f * cosf(v + 0 * PI_2_THIRDS),
-        0.5f + 0.5f * cosf(v + 1 * PI_2_THIRDS),
-        0.5f + 0.5f * cosf(v + 2 * PI_2_THIRDS),
-    };
+inline Color<float> colorize(float v) {
+  constexpr float PI = 3.141592653589793f;
+  constexpr float PI_2_THIRDS = 2.0f * PI / 3.0f;
+  return Color<float>{
+      0.5f + 0.5f * cosf(v + 0 * PI_2_THIRDS),
+      0.5f + 0.5f * cosf(v + 1 * PI_2_THIRDS),
+      0.5f + 0.5f * cosf(v + 2 * PI_2_THIRDS),
+  };
 }
 
 // lerp returns the linear interpolation between min and max using the weight x.
-inline float lerp(float x, float min, float max)
-{
-    return min + x * (max - min);
+inline float lerp(float x, float min, float max) {
+  return min + x * (max - min);
 }
 
 // julia calculates the Julia-set fractal value for the given coordinate and
 // constant. See https://en.wikipedia.org/wiki/Julia_set for more information.
-Color<float> julia(float x, float y, float cx, float cy)
-{
-    int iteration = 0;
-    for (int i = 0; i < 1000; i++)
-    {
-        if (x * x + y * y > 4)
-        {
-            return colorize(sqrt(i));
-        }
-
-        auto xtemp = x * x - y * y;
-        y = 2 * x * y + cy;
-        x = xtemp + cx;
+Color<float> julia(float x, float y, float cx, float cy) {
+  int iteration = 0;
+  for (int i = 0; i < 1000; i++) {
+    if (x * x + y * y > 4) {
+      return colorize(sqrt(i));
     }
 
-    return {};
+    auto xtemp = x * x - y * y;
+    y = 2 * x * y + cy;
+    x = xtemp + cx;
+  }
+
+  return {};
 }
 
 // writeBMP writes the given image as a bitmap to the given file, returning
 // true on success and false on error.
-bool writeBMP(const Color<uint8_t>* texels, int width, int height, const char* path)
-{
-    auto file = fopen(path, "wb");
-    if (!file)
-    {
-        fprintf(stderr, "Could not open file '%s'\n", path);
-        return false;
+bool writeBMP(const Color<uint8_t>* texels,
+              int width,
+              int height,
+              const char* path) {
+  auto file = fopen(path, "wb");
+  if (!file) {
+    fprintf(stderr, "Could not open file '%s'\n", path);
+    return false;
+  }
+  defer(fclose(file));
+
+  bool ok = true;
+  auto put4 = [&](uint32_t val) { ok = ok && fwrite(&val, 1, 4, file) == 4; };
+  auto put2 = [&](uint16_t val) { ok = ok && fwrite(&val, 1, 2, file) == 2; };
+  auto put1 = [&](uint8_t val) { ok = ok && fwrite(&val, 1, 1, file) == 1; };
+
+  const uint32_t padding = -(3 * width) & 3U;   // in bytes
+  const uint32_t stride = 3 * width + padding;  // in bytes
+  const uint32_t offset = 54;
+  const uint32_t size = offset + stride * height * 3;
+
+  // Bitmap file header
+  put1('B');  // header field
+  put1('M');
+  put4(offset + stride * height * 3);  // size in bytes
+  put4(0);                             // reserved
+  put4(offset);
+
+  // BITMAPINFOHEADER
+  put4(40);      // size of header in bytes
+  put4(width);   // width in pixels
+  put4(height);  // height in pixels
+  put2(1);       // number of color planes
+  put2(24);      // bits per pixel
+  put4(0);       // compression scheme (none)
+  put4(0);       // size
+  put4(72);      // horizontal resolution
+  put4(72);      // vertical resolution
+  put4(0);       // color pallete size
+  put4(0);       // 'important colors' count
+
+  for (int y = height - 1; y >= 0; y--) {
+    for (int x = 0; x < width; x++) {
+      auto& texel = texels[x + y * width];
+      put1(texel.b);
+      put1(texel.g);
+      put1(texel.r);
     }
-    defer(fclose(file));
-
-    bool ok = true;
-    auto put4 = [&](uint32_t val) { ok = ok && fwrite(&val, 1, 4, file) == 4; };
-    auto put2 = [&](uint16_t val) { ok = ok && fwrite(&val, 1, 2, file) == 2; };
-    auto put1 = [&](uint8_t val) { ok = ok && fwrite(&val, 1, 1, file) == 1; };
-
-    const uint32_t padding = -(3 * width) & 3U; // in bytes
-    const uint32_t stride = 3 * width + padding; // in bytes
-    const uint32_t offset = 54;
-    const uint32_t size = offset + stride * height * 3;
-
-    // Bitmap file header
-    put1('B'); // header field
-    put1('M');
-    put4(offset + stride * height * 3); // size in bytes
-    put4(0); // reserved
-    put4(offset);
-
-    // BITMAPINFOHEADER
-    put4(40); // size of header in bytes
-    put4(width); // width in pixels
-    put4(height); // height in pixels
-    put2(1); // number of color planes
-    put2(24); // bits per pixel
-    put4(0); // compression scheme (none)
-    put4(0); // size
-    put4(72); // horizontal resolution
-    put4(72); // vertical resolution
-    put4(0); // color pallete size
-    put4(0); // 'important colors' count
-
-    for (int y = height - 1; y >= 0; y--)
-    {
-        for (int x = 0; x < width; x++)
-        {
-            auto &texel = texels[x + y * width];
-            put1(texel.b);
-            put1(texel.g);
-            put1(texel.r);
-        }
-        for (int i = 0; i < padding; i++)
-        {
-            put1(0);
-        }
+    for (int i = 0; i < padding; i++) {
+      put1(0);
     }
+  }
 
-    return ok;
+  return ok;
 }
 
 // Constants used for rendering the fractal.
@@ -153,61 +147,59 @@ constexpr float windowMaxY = +0.5f;
 constexpr float cx = -0.8f;
 constexpr float cy = 0.156f;
 
-int main(int argc, const char** argv)
-{
-    // Create a marl scheduler using the full number of logical cpus.
-    // Bind this scheduler to the main thread so we can call marl::schedule()
-    marl::Scheduler scheduler;
-    scheduler.setWorkerThreadCount(marl::Thread::numLogicalCPUs());
-    scheduler.bind();
-    defer(scheduler.unbind()); // unbind before destructing the scheduler.
+int main(int argc, const char** argv) {
+  // Create a marl scheduler using the full number of logical cpus.
+  // Bind this scheduler to the main thread so we can call marl::schedule()
+  marl::Scheduler scheduler;
+  scheduler.setWorkerThreadCount(marl::Thread::numLogicalCPUs());
+  scheduler.bind();
+  defer(scheduler.unbind());  // unbind before destructing the scheduler.
 
-    // Allocate the image.
-    auto pixels = new Color<uint8_t>[imageWidth * imageHeight];
-    defer(delete [] pixels); // free memory before returning.
+  // Allocate the image.
+  auto pixels = new Color<uint8_t>[imageWidth * imageHeight];
+  defer(delete[] pixels);  // free memory before returning.
 
-    // Create a wait group that will be used to synchronize the tasks.
-    // The wait group is constructed with an initial count of imageHeight as
-    // there will be a total of imageHeight tasks.
-    marl::WaitGroup wg(imageHeight);
+  // Create a wait group that will be used to synchronize the tasks.
+  // The wait group is constructed with an initial count of imageHeight as
+  // there will be a total of imageHeight tasks.
+  marl::WaitGroup wg(imageHeight);
 
-    // For each line of the image...
-    for (int y = 0; y < imageHeight; y++) {
-        // Schedule a task to calculate the image for this line.
-        // These may run concurrently across hardware threads.
-        marl::schedule([=] {
+  // For each line of the image...
+  for (int y = 0; y < imageHeight; y++) {
+    // Schedule a task to calculate the image for this line.
+    // These may run concurrently across hardware threads.
+    marl::schedule([=] {
+      // Before this task returns, decrement the wait group counter.
+      // This is used to indicate that the task is done.
+      defer(wg.done());
 
-            // Before this task returns, decrement the wait group counter.
-            // This is used to indicate that the task is done.
-            defer(wg.done());
+      for (int x = 0; x < imageWidth; x++) {
+        // Calculate the fractal pixel color.
+        Color<float> color = {};
+        for (int sample = 0; sample < samplesPerPixel; sample++) {
+          auto fx = float(x) + (rand() / float(RAND_MAX));
+          auto fy = float(y) + (rand() / float(RAND_MAX));
+          auto dx = float(fx) / float(imageWidth);
+          auto dy = float(fy) / float(imageHeight);
+          color += julia(lerp(dx, windowMinX, windowMaxX),
+                         lerp(dy, windowMinY, windowMaxY), cx, cy);
+        }
+        color /= samplesPerPixel;
+        pixels[x + y * imageWidth] = {static_cast<uint8_t>(color.r * 255),
+                                      static_cast<uint8_t>(color.g * 255),
+                                      static_cast<uint8_t>(color.b * 255)};
+      }
+    });
+  }
 
-            for (int x = 0; x < imageWidth; x++) {
-                // Calculate the fractal pixel color.
-                Color<float> color = {};
-                for (int sample = 0; sample < samplesPerPixel; sample++)
-                {
-                    auto fx = float(x) + (rand() / float(RAND_MAX));
-                    auto fy = float(y) + (rand() / float(RAND_MAX));
-                    auto dx = float(fx) / float(imageWidth);
-                    auto dy = float(fy) / float(imageHeight);
-                    color += julia(lerp(dx, windowMinX, windowMaxX), lerp(dy, windowMinY, windowMaxY), cx, cy);
-                }
-                color /= samplesPerPixel;
-                pixels[x + y * imageWidth] = {
-                    static_cast<uint8_t>(color.r * 255),
-                    static_cast<uint8_t>(color.g * 255),
-                    static_cast<uint8_t>(color.b * 255)
-                };
-            }
-        });
-    }
+  // Wait until all image lines have been calculated.
+  wg.wait();
 
-    // Wait until all image lines have been calculated.
-    wg.wait();
+  // Write the image to "fractal.bmp".
+  if (!writeBMP(pixels, imageWidth, imageHeight, "fractal.bmp")) {
+    return 1;
+  }
 
-    // Write the image to "fractal.bmp".
-    if (!writeBMP(pixels, imageWidth, imageHeight, "fractal.bmp")) { return 1; }
-
-    // All done.
-    return 0;
+  // All done.
+  return 0;
 }

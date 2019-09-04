@@ -24,27 +24,32 @@
 
 // Assumes cdecl calling convention.
 // Registers EAX, ECX, and EDX are caller-saved, and the rest are callee-saved.
-struct marl_fiber_context
-{
-    // callee-saved registers
-    uintptr_t EBX;
-    uintptr_t EBP;
-    uintptr_t ESI;
-    uintptr_t EDI;
+struct marl_fiber_context {
+  // callee-saved registers
+  uintptr_t EBX;
+  uintptr_t EBP;
+  uintptr_t ESI;
+  uintptr_t EDI;
 
-    // stack and instruction registers
-    uintptr_t ESP;
-    uintptr_t EIP;
+  // stack and instruction registers
+  uintptr_t ESP;
+  uintptr_t EIP;
 };
 
 #ifdef __cplusplus
 #include <cstddef>
-static_assert(offsetof(marl_fiber_context, EBX) == MARL_REG_EBX, "Bad register offset");
-static_assert(offsetof(marl_fiber_context, EBP) == MARL_REG_EBP, "Bad register offset");
-static_assert(offsetof(marl_fiber_context, ESI) == MARL_REG_ESI, "Bad register offset");
-static_assert(offsetof(marl_fiber_context, EDI) == MARL_REG_EDI, "Bad register offset");
-static_assert(offsetof(marl_fiber_context, ESP) == MARL_REG_ESP, "Bad register offset");
-static_assert(offsetof(marl_fiber_context, EIP) == MARL_REG_EIP, "Bad register offset");
-#endif // __cplusplus
+static_assert(offsetof(marl_fiber_context, EBX) == MARL_REG_EBX,
+              "Bad register offset");
+static_assert(offsetof(marl_fiber_context, EBP) == MARL_REG_EBP,
+              "Bad register offset");
+static_assert(offsetof(marl_fiber_context, ESI) == MARL_REG_ESI,
+              "Bad register offset");
+static_assert(offsetof(marl_fiber_context, EDI) == MARL_REG_EDI,
+              "Bad register offset");
+static_assert(offsetof(marl_fiber_context, ESP) == MARL_REG_ESP,
+              "Bad register offset");
+static_assert(offsetof(marl_fiber_context, EIP) == MARL_REG_EIP,
+              "Bad register offset");
+#endif  // __cplusplus
 
-#endif // MARL_BUILD_ASM
+#endif  // MARL_BUILD_ASM

@@ -19,8 +19,8 @@
 
 namespace marl {
 
-#define MARL_CONCAT_(a, b) a ## b
-#define MARL_CONCAT(a, b) MARL_CONCAT_(a,b)
+#define MARL_CONCAT_(a, b) a##b
+#define MARL_CONCAT(a, b) MARL_CONCAT_(a, b)
 
 // defer() is a macro to defer execution of a statement until the surrounding
 // scope is closed and is typically used to perform cleanup logic once a
@@ -37,8 +37,9 @@ namespace marl {
 //      printf("hello ");
 //  }
 //
-#define defer(x) auto MARL_CONCAT(defer_, __LINE__) = marl::make_finally([&]{ x; })
+#define defer(x) \
+  auto MARL_CONCAT(defer_, __LINE__) = marl::make_finally([&] { x; })
 
-} // namespace marl
+}  // namespace marl
 
 #endif  // marl_defer_h

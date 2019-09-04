@@ -16,11 +16,11 @@
 #define marl_debug_h
 
 #if !defined(MARL_DEBUG_ENABLED)
-#    if !defined(NDEBUG) || defined(DCHECK_ALWAYS_ON)
-#        define MARL_DEBUG_ENABLED 1
-#    else
-#        define MARL_DEBUG_ENABLED 0
-#    endif
+#if !defined(NDEBUG) || defined(DCHECK_ALWAYS_ON)
+#define MARL_DEBUG_ENABLED 1
+#else
+#define MARL_DEBUG_ENABLED 0
+#endif
 #endif
 
 namespace marl {
@@ -30,8 +30,14 @@ void assert_has_bound_scheduler(const char* feature);
 
 #if MARL_DEBUG_ENABLED
 #define MARL_FATAL(msg, ...) marl::fatal(msg "\n", ##__VA_ARGS__);
-#define MARL_ASSERT(cond, msg, ...) do { if (!(cond)) { MARL_FATAL("ASSERT: " msg, ##__VA_ARGS__); } } while (false);
-#define MARL_ASSERT_HAS_BOUND_SCHEDULER(feature) assert_has_bound_scheduler(feature);
+#define MARL_ASSERT(cond, msg, ...)              \
+  do {                                           \
+    if (!(cond)) {                               \
+      MARL_FATAL("ASSERT: " msg, ##__VA_ARGS__); \
+    }                                            \
+  } while (false);
+#define MARL_ASSERT_HAS_BOUND_SCHEDULER(feature) \
+  assert_has_bound_scheduler(feature);
 #define MARL_UNREACHABLE() MARL_FATAL("UNREACHABLE");
 #else
 #define MARL_FATAL(msg, ...)
@@ -40,6 +46,6 @@ void assert_has_bound_scheduler(const char* feature);
 #define MARL_UNREACHABLE()
 #endif
 
-} // namespace marl
+}  // namespace marl
 
 #endif  // marl_debug_h

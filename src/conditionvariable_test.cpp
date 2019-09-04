@@ -16,81 +16,72 @@
 
 #include "marl_test.h"
 
-TEST(WithoutBoundScheduler, ConditionVariable)
-{
-    bool trigger[3] = {false, false, false};
-    bool signal[3] = {false, false, false};
-    std::mutex mutex;
-    marl::ConditionVariable cv;
+TEST(WithoutBoundScheduler, ConditionVariable) {
+  bool trigger[3] = {false, false, false};
+  bool signal[3] = {false, false, false};
+  std::mutex mutex;
+  marl::ConditionVariable cv;
 
-    std::thread thread([&]
+  std::thread thread([&] {
+    for (int i = 0; i < 3; i++) {
+      std::unique_lock<std::mutex> lock(mutex);
+      cv.wait(lock, [&] { return trigger[i]; });
+      signal[i] = true;
+      cv.notify_one();
+    }
+  });
+
+  ASSERT_FALSE(signal[0]);
+  ASSERT_FALSE(signal[1]);
+  ASSERT_FALSE(signal[2]);
+
+  for (int i = 0; i < 3; i++) {
     {
-        for (int i = 0; i < 3; i++)
-        {
-            std::unique_lock<std::mutex> lock(mutex);
-            cv.wait(lock, [&] { return trigger[i]; });
-            signal[i] = true;
-            cv.notify_one();
-        }
-    });
-
-    ASSERT_FALSE(signal[0]);
-    ASSERT_FALSE(signal[1]);
-    ASSERT_FALSE(signal[2]);
-
-    for (int i = 0; i < 3; i++)
-    {
-        {
-            std::unique_lock<std::mutex> lock(mutex);
-            trigger[i] = true;
-            cv.notify_one();
-            cv.wait(lock, [&] { return signal[i]; });
-        }
-
-        ASSERT_EQ(signal[0], 0 <= i);
-        ASSERT_EQ(signal[1], 1 <= i);
-        ASSERT_EQ(signal[2], 2 <= i);
+      std::unique_lock<std::mutex> lock(mutex);
+      trigger[i] = true;
+      cv.notify_one();
+      cv.wait(lock, [&] { return signal[i]; });
     }
 
-    thread.join();
+    ASSERT_EQ(signal[0], 0 <= i);
+    ASSERT_EQ(signal[1], 1 <= i);
+    ASSERT_EQ(signal[2], 2 <= i);
+  }
+
+  thread.join();
 }
 
+TEST_P(WithBoundScheduler, ConditionVariable) {
+  bool trigger[3] = {false, false, false};
+  bool signal[3] = {false, false, false};
+  std::mutex mutex;
+  marl::ConditionVariable cv;
 
-TEST_P(WithBoundScheduler, ConditionVariable)
-{
-    bool trigger[3] = {false, false, false};
-    bool signal[3] = {false, false, false};
-    std::mutex mutex;
-    marl::ConditionVariable cv;
+  std::thread thread([&] {
+    for (int i = 0; i < 3; i++) {
+      std::unique_lock<std::mutex> lock(mutex);
+      cv.wait(lock, [&] { return trigger[i]; });
+      signal[i] = true;
+      cv.notify_one();
+    }
+  });
 
-    std::thread thread([&]
+  ASSERT_FALSE(signal[0]);
+  ASSERT_FALSE(signal[1]);
+  ASSERT_FALSE(signal[2]);
+
+  for (int i = 0; i < 3; i++) {
     {
-        for (int i = 0; i < 3; i++)
-        {
-            std::unique_lock<std::mutex> lock(mutex);
-            cv.wait(lock, [&] { return trigger[i]; });
-            signal[i] = true;
-            cv.notify_one();
-        }
-    });
-
-    ASSERT_FALSE(signal[0]);
-    ASSERT_FALSE(signal[1]);
-    ASSERT_FALSE(signal[2]);
-
-    for (int i = 0; i < 3; i++)
-    {
-        {
-            std::unique_lock<std::mutex> lock(mutex);
-            trigger[i] = true;
-            cv.notify_one();
-            cv.wait(lock, [&] { return signal[i]; });
-        }
-
-        ASSERT_EQ(signal[0], 0 <= i);
-        ASSERT_EQ(signal[1], 1 <= i);
-        ASSERT_EQ(signal[2], 2 <= i);
+      std::unique_lock<std::mutex> lock(mutex);
+      trigger[i] = true;
+      cv.notify_one();
+      cv.wait(lock, [&] { return signal[i]; });
     }
 
-    thread.join();
+    ASSERT_EQ(signal[0], 0 <= i);
+    ASSERT_EQ(signal[1], 1 <= i);
+    ASSERT_EQ(signal[2], 2 <= i);
+  }
+
+  thread.join();
 }

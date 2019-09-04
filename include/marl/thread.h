@@ -19,18 +19,17 @@ namespace marl {
 
 // Thread contains static methods that abstract OS-specific thread / cpu
 // queries and control.
-class Thread
-{
-public:
-    // setName() sets the name of the currently executing thread for displaying
-    // in a debugger.
-    static void setName(const char* fmt, ...);
+class Thread {
+ public:
+  // setName() sets the name of the currently executing thread for displaying
+  // in a debugger.
+  static void setName(const char* fmt, ...);
 
-    // numLogicalCPUs() returns the number of available logical CPU cores for
-    // the system.
-    static unsigned int numLogicalCPUs();
+  // numLogicalCPUs() returns the number of available logical CPU cores for
+  // the system.
+  static unsigned int numLogicalCPUs();
 };
 
-} // namespace marl
+}  // namespace marl
 
 #endif  // marl_thread_h

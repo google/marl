@@ -16,25 +16,21 @@
 
 #include "marl_test.h"
 
-TEST(WithoutBoundScheduler, Defer)
-{
-    bool deferCalled = false;
-    {
-        defer(deferCalled = true);
-    }
-    ASSERT_TRUE(deferCalled);
+TEST(WithoutBoundScheduler, Defer) {
+  bool deferCalled = false;
+  { defer(deferCalled = true); }
+  ASSERT_TRUE(deferCalled);
 }
 
-TEST(WithoutBoundScheduler, DeferOrder)
-{
-    int counter = 0;
-    int a = 0, b = 0, c = 0;
-    {
-        defer(a = ++counter);
-        defer(b = ++counter);
-        defer(c = ++counter);
-    }
-    ASSERT_EQ(a, 3);
-    ASSERT_EQ(b, 2);
-    ASSERT_EQ(c, 1);
+TEST(WithoutBoundScheduler, DeferOrder) {
+  int counter = 0;
+  int a = 0, b = 0, c = 0;
+  {
+    defer(a = ++counter);
+    defer(b = ++counter);
+    defer(c = ++counter);
+  }
+  ASSERT_EQ(a, 3);
+  ASSERT_EQ(b, 2);
+  ASSERT_EQ(c, 1);
 }

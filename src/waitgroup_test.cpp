@@ -16,46 +16,41 @@
 
 #include "marl/waitgroup.h"
 
-TEST(WithoutBoundScheduler, WaitGroupDone)
-{
-    marl::WaitGroup wg(2); // Should not require a scheduler.
-    wg.done();
-    wg.done();
+TEST(WithoutBoundScheduler, WaitGroupDone) {
+  marl::WaitGroup wg(2);  // Should not require a scheduler.
+  wg.done();
+  wg.done();
 }
 
 #if MARL_DEBUG_ENABLED
-TEST(WithoutBoundScheduler, WaitGroupDoneTooMany)
-{
-    marl::WaitGroup wg(2); // Should not require a scheduler.
-    wg.done();
-    wg.done();
-    EXPECT_DEATH(wg.done(), "done\\(\\) called too many times");
+TEST(WithoutBoundScheduler, WaitGroupDoneTooMany) {
+  marl::WaitGroup wg(2);  // Should not require a scheduler.
+  wg.done();
+  wg.done();
+  EXPECT_DEATH(wg.done(), "done\\(\\) called too many times");
 }
-#endif // MARL_DEBUG_ENABLED
+#endif  // MARL_DEBUG_ENABLED
 
-TEST_P(WithBoundScheduler, WaitGroup_OneTask)
-{
-    marl::WaitGroup wg(1);
-    std::atomic<int> counter = {0};
+TEST_P(WithBoundScheduler, WaitGroup_OneTask) {
+  marl::WaitGroup wg(1);
+  std::atomic<int> counter = {0};
+  marl::schedule([&counter, wg] {
+    counter++;
+    wg.done();
+  });
+  wg.wait();
+  ASSERT_EQ(counter.load(), 1);
+}
+
+TEST_P(WithBoundScheduler, WaitGroup_10Tasks) {
+  marl::WaitGroup wg(10);
+  std::atomic<int> counter = {0};
+  for (int i = 0; i < 10; i++) {
     marl::schedule([&counter, wg] {
-        counter++;
-        wg.done();
+      counter++;
+      wg.done();
     });
-    wg.wait();
-    ASSERT_EQ(counter.load(), 1);
-}
-
-TEST_P(WithBoundScheduler, WaitGroup_10Tasks)
-{
-    marl::WaitGroup wg(10);
-    std::atomic<int> counter = {0};
-    for (int i = 0; i < 10; i++)
-    {
-        marl::schedule([&counter, wg] {
-            counter++;
-            wg.done();
-        });
-    }
-    wg.wait();
-    ASSERT_EQ(counter.load(), 10);
+  }
+  wg.wait();
+  ASSERT_EQ(counter.load(), 10);
 }

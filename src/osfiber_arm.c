@@ -16,18 +16,20 @@
 
 #include "osfiber_asm_arm.h"
 
-void marl_fiber_trampoline(void(*target)(void*), void* arg)
-{
-    target(arg);
+void marl_fiber_trampoline(void (*target)(void*), void* arg) {
+  target(arg);
 }
 
-void marl_fiber_set_target(struct marl_fiber_context* ctx, void* stack, uint32_t stack_size, void(*target)(void*), void* arg)
-{
-    uintptr_t* stack_top = (uintptr_t*)((uint8_t*)(stack) + stack_size);
-    ctx->LR = (uintptr_t)&marl_fiber_trampoline;
-    ctx->r0 = (uintptr_t)target;
-    ctx->r1 = (uintptr_t)arg;
-    ctx->SP = ((uintptr_t)stack_top) & ~(uintptr_t)15;
+void marl_fiber_set_target(struct marl_fiber_context* ctx,
+                           void* stack,
+                           uint32_t stack_size,
+                           void (*target)(void*),
+                           void* arg) {
+  uintptr_t* stack_top = (uintptr_t*)((uint8_t*)(stack) + stack_size);
+  ctx->LR = (uintptr_t)&marl_fiber_trampoline;
+  ctx->r0 = (uintptr_t)target;
+  ctx->r1 = (uintptr_t)arg;
+  ctx->SP = ((uintptr_t)stack_top) & ~(uintptr_t)15;
 }
 
-#endif // defined(__arm__)
+#endif  // defined(__arm__)

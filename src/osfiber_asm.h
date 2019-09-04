@@ -37,67 +37,69 @@
 #include <functional>
 #include <memory>
 
-extern "C"
-{
+extern "C" {
 
-extern void marl_fiber_set_target(marl_fiber_context*, void* stack, uint32_t stack_size, void(*target)(void*), void* arg);
-extern void marl_fiber_swap(marl_fiber_context* from, const marl_fiber_context* to);
+extern void marl_fiber_set_target(marl_fiber_context*,
+                                  void* stack,
+                                  uint32_t stack_size,
+                                  void (*target)(void*),
+                                  void* arg);
+extern void marl_fiber_swap(marl_fiber_context* from,
+                            const marl_fiber_context* to);
 
-} // extern "C"
+}  // extern "C"
 
 namespace marl {
 
-class OSFiber
-{
-public:
-    // createFiberFromCurrentThread() returns a fiber created from the current
-    // thread.
-    static inline OSFiber* createFiberFromCurrentThread();
+class OSFiber {
+ public:
+  // createFiberFromCurrentThread() returns a fiber created from the current
+  // thread.
+  static inline OSFiber* createFiberFromCurrentThread();
 
-    // createFiber() returns a new fiber with the given stack size that will
-    // call func when switched to. func() must end by switching back to another
-    // fiber, and must not return.
-    static inline OSFiber* createFiber(size_t stackSize, const std::function<void()>& func);
+  // createFiber() returns a new fiber with the given stack size that will
+  // call func when switched to. func() must end by switching back to another
+  // fiber, and must not return.
+  static inline OSFiber* createFiber(size_t stackSize,
+                                     const std::function<void()>& func);
 
-    // switchTo() immediately switches execution to the given fiber.
-    // switchTo() must be called on the currently executing fiber.
-    inline void switchTo(OSFiber*);
+  // switchTo() immediately switches execution to the given fiber.
+  // switchTo() must be called on the currently executing fiber.
+  inline void switchTo(OSFiber*);
 
-private:
-    static inline void run(OSFiber* self);
+ private:
+  static inline void run(OSFiber* self);
 
-    marl_fiber_context context;
-    std::function<void()> target;
-    std::unique_ptr<uint8_t[]> stack;
+  marl_fiber_context context;
+  std::function<void()> target;
+  std::unique_ptr<uint8_t[]> stack;
 };
 
-OSFiber* OSFiber::createFiberFromCurrentThread()
-{
-    auto out = new OSFiber();
-    out->context = {};
-    return out;
+OSFiber* OSFiber::createFiberFromCurrentThread() {
+  auto out = new OSFiber();
+  out->context = {};
+  return out;
 }
 
-OSFiber* OSFiber::createFiber(size_t stackSize, const std::function<void()>& func)
-{
-    auto out = new OSFiber();
-    out->context = {};
-    out->target = func;
-    out->stack = std::unique_ptr<uint8_t[]>(new uint8_t[stackSize]);
-    marl_fiber_set_target(&out->context, out->stack.get(), stackSize, reinterpret_cast<void (*)(void*)>(&OSFiber::run), out);
-    return out;
+OSFiber* OSFiber::createFiber(size_t stackSize,
+                              const std::function<void()>& func) {
+  auto out = new OSFiber();
+  out->context = {};
+  out->target = func;
+  out->stack = std::unique_ptr<uint8_t[]>(new uint8_t[stackSize]);
+  marl_fiber_set_target(&out->context, out->stack.get(), stackSize,
+                        reinterpret_cast<void (*)(void*)>(&OSFiber::run), out);
+  return out;
 }
 
-void OSFiber::run(OSFiber* self)
-{
-    std::function<void()> func;
-    std::swap(func, self->target);
-    func();
+void OSFiber::run(OSFiber* self) {
+  std::function<void()> func;
+  std::swap(func, self->target);
+  func();
 }
 
-void OSFiber::switchTo(OSFiber* fiber)
-{
-    marl_fiber_swap(&context, &fiber->context);
+void OSFiber::switchTo(OSFiber* fiber) {
+  marl_fiber_swap(&context, &fiber->context);
 }
 
 }  // namespace marl

@@ -19,72 +19,64 @@
 
 namespace marl {
 
-class OSFiber
-{
-public:
-	inline ~OSFiber();
+class OSFiber {
+ public:
+  inline ~OSFiber();
 
-    // createFiberFromCurrentThread() returns a fiber created from the current
-    // thread.
-    static inline OSFiber* createFiberFromCurrentThread();
+  // createFiberFromCurrentThread() returns a fiber created from the current
+  // thread.
+  static inline OSFiber* createFiberFromCurrentThread();
 
-    // createFiber() returns a new fiber with the given stack size that will
-    // call func when switched to. func() must end by switching back to another
-    // fiber, and must not return.
-    static inline OSFiber* createFiber(size_t stackSize, const std::function<void()>& func);
+  // createFiber() returns a new fiber with the given stack size that will
+  // call func when switched to. func() must end by switching back to another
+  // fiber, and must not return.
+  static inline OSFiber* createFiber(size_t stackSize,
+                                     const std::function<void()>& func);
 
-    // switchTo() immediately switches execution to the given fiber.
-    // switchTo() must be called on the currently executing fiber.
-    inline void switchTo(OSFiber*);
+  // switchTo() immediately switches execution to the given fiber.
+  // switchTo() must be called on the currently executing fiber.
+  inline void switchTo(OSFiber*);
 
-private:
-	static inline void WINAPI run(void* self);
-	LPVOID fiber = nullptr;
-	bool isFiberFromThread = false;
-	std::function<void()> target;
+ private:
+  static inline void WINAPI run(void* self);
+  LPVOID fiber = nullptr;
+  bool isFiberFromThread = false;
+  std::function<void()> target;
 };
 
-OSFiber::~OSFiber()
-{
-	if (fiber != nullptr)
-	{
-		if (isFiberFromThread)
-		{
-			ConvertFiberToThread();
-		}
-		else
-		{
-			DeleteFiber(fiber);
-		}
-	}
+OSFiber::~OSFiber() {
+  if (fiber != nullptr) {
+    if (isFiberFromThread) {
+      ConvertFiberToThread();
+    } else {
+      DeleteFiber(fiber);
+    }
+  }
 }
 
-OSFiber* OSFiber::createFiberFromCurrentThread()
-{
-	auto out = new OSFiber();
-	out->fiber = ConvertThreadToFiber(nullptr);
-	out->isFiberFromThread = true;
-	return out;
+OSFiber* OSFiber::createFiberFromCurrentThread() {
+  auto out = new OSFiber();
+  out->fiber = ConvertThreadToFiber(nullptr);
+  out->isFiberFromThread = true;
+  return out;
 }
 
-OSFiber* OSFiber::createFiber(size_t stackSize, const std::function<void()>& func)
-{
-	auto out = new OSFiber();
-	out->fiber = CreateFiber(stackSize, &OSFiber::run, out);
-	out->target = func;
-	return out;
+OSFiber* OSFiber::createFiber(size_t stackSize,
+                              const std::function<void()>& func) {
+  auto out = new OSFiber();
+  out->fiber = CreateFiber(stackSize, &OSFiber::run, out);
+  out->target = func;
+  return out;
 }
 
-void OSFiber::switchTo(OSFiber* fiber)
-{
-	SwitchToFiber(fiber->fiber);
+void OSFiber::switchTo(OSFiber* fiber) {
+  SwitchToFiber(fiber->fiber);
 }
 
-void WINAPI OSFiber::run(void* self)
-{
-	std::function<void()> func;
-	std::swap(func, reinterpret_cast<OSFiber*>(self)->target);
-	func();
+void WINAPI OSFiber::run(void* self) {
+  std::function<void()> func;
+  std::swap(func, reinterpret_cast<OSFiber*>(self)->target);
+  func();
 }
 
 }  // namespace marl

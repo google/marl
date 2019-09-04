@@ -16,29 +16,29 @@
 
 #include "marl_test.h"
 
-TEST(WithoutBoundScheduler, OSFiber)
-{
-    std::string str;
-    auto constexpr fiberStackSize = 8 * 1024;
-    auto main = std::unique_ptr<marl::OSFiber>(marl::OSFiber::createFiberFromCurrentThread());
-    std::unique_ptr<marl::OSFiber> fiberA, fiberB, fiberC;
-    fiberC = std::unique_ptr<marl::OSFiber>(marl::OSFiber::createFiber(fiberStackSize, [&]
-    {
+TEST(WithoutBoundScheduler, OSFiber) {
+  std::string str;
+  auto constexpr fiberStackSize = 8 * 1024;
+  auto main = std::unique_ptr<marl::OSFiber>(
+      marl::OSFiber::createFiberFromCurrentThread());
+  std::unique_ptr<marl::OSFiber> fiberA, fiberB, fiberC;
+  fiberC = std::unique_ptr<marl::OSFiber>(
+      marl::OSFiber::createFiber(fiberStackSize, [&] {
         str += "C";
         fiberC->switchTo(fiberB.get());
-    }));
-    fiberB = std::unique_ptr<marl::OSFiber>(marl::OSFiber::createFiber(fiberStackSize, [&]
-    {
+      }));
+  fiberB = std::unique_ptr<marl::OSFiber>(
+      marl::OSFiber::createFiber(fiberStackSize, [&] {
         str += "B";
         fiberB->switchTo(fiberA.get());
-    }));
-    fiberA = std::unique_ptr<marl::OSFiber>(marl::OSFiber::createFiber(fiberStackSize, [&]
-    {
+      }));
+  fiberA = std::unique_ptr<marl::OSFiber>(
+      marl::OSFiber::createFiber(fiberStackSize, [&] {
         str += "A";
         fiberA->switchTo(main.get());
-    }));
+      }));
 
-    main->switchTo(fiberC.get());
+  main->switchTo(fiberC.get());
 
-    ASSERT_EQ(str, "CBA");
+  ASSERT_EQ(str, "CBA");
 }

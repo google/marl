@@ -16,28 +16,25 @@
 
 #include "marl/ticket.h"
 
-TEST_P(WithBoundScheduler, Ticket)
-{
-    marl::Ticket::Queue queue;
+TEST_P(WithBoundScheduler, Ticket) {
+  marl::Ticket::Queue queue;
 
-    constexpr int count = 1000;
-    std::atomic<int> next = { 0 };
-    int result[count] = {};
+  constexpr int count = 1000;
+  std::atomic<int> next = {0};
+  int result[count] = {};
 
-    for (int i = 0; i < count; i++)
-    {
-        auto ticket = queue.take();
-        marl::schedule([ticket, i, &result, &next] {
-            ticket.wait();
-            result[next++] = i;
-            ticket.done();
-        });
-    }
+  for (int i = 0; i < count; i++) {
+    auto ticket = queue.take();
+    marl::schedule([ticket, i, &result, &next] {
+      ticket.wait();
+      result[next++] = i;
+      ticket.done();
+    });
+  }
 
-    queue.take().wait();
+  queue.take().wait();
 
-    for (int i = 0; i < count; i++)
-    {
-        ASSERT_EQ(result[i], i);
-    }
+  for (int i = 0; i < count; i++) {
+    ASSERT_EQ(result[i], i);
+  }
 }

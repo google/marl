@@ -22,21 +22,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-namespace marl
-{
+namespace marl {
 
-void fatal(const char* msg, ...)
-{
-    va_list vararg;
-    va_start(vararg, msg);
-    vfprintf(stderr, msg, vararg);
-    va_end(vararg);
-    abort();
+void fatal(const char* msg, ...) {
+  va_list vararg;
+  va_start(vararg, msg);
+  vfprintf(stderr, msg, vararg);
+  va_end(vararg);
+  abort();
 }
 
-void assert_has_bound_scheduler(const char* feature)
-{
-    MARL_ASSERT(Scheduler::get() != nullptr, "%s requires a marl::Scheduler to be bound", feature);
+void assert_has_bound_scheduler(const char* feature) {
+  MARL_ASSERT(Scheduler::get() != nullptr,
+              "%s requires a marl::Scheduler to be bound", feature);
 }
 
 }  // namespace marl

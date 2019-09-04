@@ -20,87 +20,83 @@
 #include <cstdio>
 
 #if defined(_WIN32)
-#   ifndef WIN32_LEAN_AND_MEAN
-#       define WIN32_LEAN_AND_MEAN
-#   endif
-#   include <windows.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
 #elif defined(__APPLE__)
-#   include <pthread.h>
-#   include <mach/thread_act.h>
-#   include <unistd.h>
+#include <mach/thread_act.h>
+#include <pthread.h>
+#include <unistd.h>
 #else
-#   include <pthread.h>
-#   include <unistd.h>
+#include <pthread.h>
+#include <unistd.h>
 #endif
 
 namespace marl {
 
 #if defined(_WIN32)
 
-void Thread::setName(const char* fmt, ...)
-{
-    static auto setThreadDescription = reinterpret_cast<HRESULT(WINAPI*)(HANDLE, PCWSTR)>(GetProcAddress(GetModuleHandle("kernelbase.dll"), "SetThreadDescription"));
-    if (setThreadDescription == nullptr)
-    {
-        return;
-    }
+void Thread::setName(const char* fmt, ...) {
+  static auto setThreadDescription =
+      reinterpret_cast<HRESULT(WINAPI*)(HANDLE, PCWSTR)>(GetProcAddress(
+          GetModuleHandle("kernelbase.dll"), "SetThreadDescription"));
+  if (setThreadDescription == nullptr) {
+    return;
+  }
 
-    char name[1024];
-    va_list vararg;
-    va_start(vararg, fmt);
-    vsnprintf(name, sizeof(name), fmt, vararg);
-    va_end(vararg);
+  char name[1024];
+  va_list vararg;
+  va_start(vararg, fmt);
+  vsnprintf(name, sizeof(name), fmt, vararg);
+  va_end(vararg);
 
-    wchar_t wname[1024];
-    mbstowcs(wname, name, 1024);
-    setThreadDescription(GetCurrentThread(), wname);
-    MARL_NAME_THREAD("%s", name);
+  wchar_t wname[1024];
+  mbstowcs(wname, name, 1024);
+  setThreadDescription(GetCurrentThread(), wname);
+  MARL_NAME_THREAD("%s", name);
 }
 
-unsigned int Thread::numLogicalCPUs()
-{
-    DWORD_PTR processAffinityMask = 1;
-    DWORD_PTR systemAffinityMask = 1;
+unsigned int Thread::numLogicalCPUs() {
+  DWORD_PTR processAffinityMask = 1;
+  DWORD_PTR systemAffinityMask = 1;
 
-    GetProcessAffinityMask(GetCurrentProcess(), &processAffinityMask, &systemAffinityMask);
+  GetProcessAffinityMask(GetCurrentProcess(), &processAffinityMask,
+                         &systemAffinityMask);
 
-    auto count = 0;
-    while (processAffinityMask > 0)
-    {
-        if (processAffinityMask & 1)
-        {
-            count++;
-        }
-
-        processAffinityMask >>= 1;
+  auto count = 0;
+  while (processAffinityMask > 0) {
+    if (processAffinityMask & 1) {
+      count++;
     }
-    return count;
+
+    processAffinityMask >>= 1;
+  }
+  return count;
 }
 
 #else
 
-void Thread::setName(const char* fmt, ...)
-{
-    char name[1024];
-    va_list vararg;
-    va_start(vararg, fmt);
-    vsnprintf(name, sizeof(name), fmt, vararg);
-    va_end(vararg);
+void Thread::setName(const char* fmt, ...) {
+  char name[1024];
+  va_list vararg;
+  va_start(vararg, fmt);
+  vsnprintf(name, sizeof(name), fmt, vararg);
+  va_end(vararg);
 
 #if defined(__APPLE__)
-    pthread_setname_np(name);
+  pthread_setname_np(name);
 #elif !defined(__Fuchsia__)
-    pthread_setname_np(pthread_self(), name);
+  pthread_setname_np(pthread_self(), name);
 #endif
 
-    MARL_NAME_THREAD("%s", name);
+  MARL_NAME_THREAD("%s", name);
 }
 
-unsigned int Thread::numLogicalCPUs()
-{
-    return sysconf(_SC_NPROCESSORS_ONLN);
+unsigned int Thread::numLogicalCPUs() {
+  return sysconf(_SC_NPROCESSORS_ONLN);
 }
 
 #endif
 
-} // namespace marl
+}  // namespace marl

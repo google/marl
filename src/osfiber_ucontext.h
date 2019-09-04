@@ -16,7 +16,7 @@
 // This must come before other #includes, otherwise we'll end up with ucontext_t
 // definition mismatches, leading to memory corruption hilarity.
 #define _XOPEN_SOURCE
-#endif //  !defined(_XOPEN_SOURCE)
+#endif  //  !defined(_XOPEN_SOURCE)
 
 #include "marl/debug.h"
 
@@ -28,87 +28,88 @@
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif // defined(__clang__)
+#endif  // defined(__clang__)
 
 namespace marl {
 
-class OSFiber
-{
-public:
-    // createFiberFromCurrentThread() returns a fiber created from the current
-    // thread.
-    static inline OSFiber* createFiberFromCurrentThread();
+class OSFiber {
+ public:
+  // createFiberFromCurrentThread() returns a fiber created from the current
+  // thread.
+  static inline OSFiber* createFiberFromCurrentThread();
 
-    // createFiber() returns a new fiber with the given stack size that will
-    // call func when switched to. func() must end by switching back to another
-    // fiber, and must not return.
-    static inline OSFiber* createFiber(size_t stackSize, const std::function<void()>& func);
+  // createFiber() returns a new fiber with the given stack size that will
+  // call func when switched to. func() must end by switching back to another
+  // fiber, and must not return.
+  static inline OSFiber* createFiber(size_t stackSize,
+                                     const std::function<void()>& func);
 
-    // switchTo() immediately switches execution to the given fiber.
-    // switchTo() must be called on the currently executing fiber.
-    inline void switchTo(OSFiber*);
+  // switchTo() immediately switches execution to the given fiber.
+  // switchTo() must be called on the currently executing fiber.
+  inline void switchTo(OSFiber*);
 
-private:
-	std::unique_ptr<uint8_t[]> stack;
-	ucontext_t context;
-	std::function<void()> target;
+ private:
+  std::unique_ptr<uint8_t[]> stack;
+  ucontext_t context;
+  std::function<void()> target;
 };
 
-OSFiber* OSFiber::createFiberFromCurrentThread()
-{
-	auto out = new OSFiber();
-	out->context = {};
-	getcontext(&out->context);
-	return out;
+OSFiber* OSFiber::createFiberFromCurrentThread() {
+  auto out = new OSFiber();
+  out->context = {};
+  getcontext(&out->context);
+  return out;
 }
 
-OSFiber* OSFiber::createFiber(size_t stackSize, const std::function<void()>& func)
-{
-	union Args
-	{
-		OSFiber* self;
-		struct { int a; int b; };
-	};
+OSFiber* OSFiber::createFiber(size_t stackSize,
+                              const std::function<void()>& func) {
+  union Args {
+    OSFiber* self;
+    struct {
+      int a;
+      int b;
+    };
+  };
 
-	struct Target
-	{
-		static void Main(int a, int b)
-		{
-			Args u;
-			u.a = a; u.b = b;
-			std::function<void()> func;
-			std::swap(func, u.self->target);
-			func();
-		}
-	};
+  struct Target {
+    static void Main(int a, int b) {
+      Args u;
+      u.a = a;
+      u.b = b;
+      std::function<void()> func;
+      std::swap(func, u.self->target);
+      func();
+    }
+  };
 
-	auto out = new OSFiber();
-	out->context = {};
-	out->stack = std::unique_ptr<uint8_t[]>(new uint8_t[stackSize]);
-	out->target = func;
+  auto out = new OSFiber();
+  out->context = {};
+  out->stack = std::unique_ptr<uint8_t[]>(new uint8_t[stackSize]);
+  out->target = func;
 
-	auto alignmentOffset = 15 - (reinterpret_cast<uintptr_t>(out->stack.get() + 15) & 15);
-	auto res = getcontext(&out->context);
-	MARL_ASSERT(res == 0, "getcontext() returned %d", int(res));
-	out->context.uc_stack.ss_sp = out->stack.get() + alignmentOffset;
-	out->context.uc_stack.ss_size = stackSize - alignmentOffset;
-	out->context.uc_link = nullptr;
+  auto alignmentOffset =
+      15 - (reinterpret_cast<uintptr_t>(out->stack.get() + 15) & 15);
+  auto res = getcontext(&out->context);
+  MARL_ASSERT(res == 0, "getcontext() returned %d", int(res));
+  out->context.uc_stack.ss_sp = out->stack.get() + alignmentOffset;
+  out->context.uc_stack.ss_size = stackSize - alignmentOffset;
+  out->context.uc_link = nullptr;
 
-	Args args;
-	args.self = out;
-	makecontext(&out->context, reinterpret_cast<void(*)()>(&Target::Main), 2, args.a, args.b);
+  Args args;
+  args.self = out;
+  makecontext(&out->context, reinterpret_cast<void (*)()>(&Target::Main), 2,
+              args.a, args.b);
 
-	return out;
+  return out;
 }
 
-void OSFiber::switchTo(OSFiber* fiber)
-{
-	auto res = swapcontext(&context, &fiber->context);
-	MARL_ASSERT(res == 0, "swapcontext() returned %d", int(res));
+void OSFiber::switchTo(OSFiber* fiber) {
+  auto res = swapcontext(&context, &fiber->context);
+  MARL_ASSERT(res == 0, "swapcontext() returned %d", int(res));
 }
 
 }  // namespace marl
 
 #if defined(__clang__)
 #pragma clang diagnostic pop
-#endif // defined(__clang__)
+#endif  // defined(__clang__)
