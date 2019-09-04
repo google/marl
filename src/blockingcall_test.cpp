@@ -21,20 +21,20 @@
 #include <mutex>
 
 TEST_P(WithBoundScheduler, BlockingCall) {
-  std::mutex mutex;
-  mutex.lock();
+  auto mutex = std::make_shared<std::mutex>();
+  mutex->lock();
 
   marl::WaitGroup wg(100);
   for (int i = 0; i < 100; i++) {
-    marl::schedule([&] {
-      marl::blocking_call([&] {
-        mutex.lock();
-        defer(mutex.unlock());
-        wg.done();
+    marl::schedule([=] {
+      defer(wg.done());
+      marl::blocking_call([=] {
+        mutex->lock();
+        defer(mutex->unlock());
       });
     });
   }
 
-  marl::schedule([&] { mutex.unlock(); });
+  marl::schedule([=] { mutex->unlock(); });
   wg.wait();
 }
