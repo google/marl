@@ -83,7 +83,7 @@ set_target_properties(marl PROPERTIES
 )
 target_link_libraries(marl "${MARL_OS_LIBS}")
 
-if(BUILD_TESTS)
+if(MARL_BUILD_TESTS)
     file(GLOB MARL_TEST_LIST
         ${MARL_SRC_DIR}/*_test.cpp
         ${GOOGLETEST_DIR}/googletest/src/gtest-all.cc
@@ -103,7 +103,7 @@ if(BUILD_TESTS)
         FOLDER "Tests"
     )
     target_link_libraries(marl-unittests marl "${MARL_OS_LIBS}")
-endif(BUILD_TESTS)
+endif(MARL_BUILD_TESTS)
 
 if(MARL_BUILD_EXAMPLES)
     function(BUILD_EXAMPLE name)
