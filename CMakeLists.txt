@@ -19,6 +19,12 @@ set (CMAKE_CXX_STANDARD 11)
 project(Marl C CXX ASM)
 
 ###########################################################
+# Options
+###########################################################
+option(MARL_BUILD_EXAMPLES "Build example applications" OFF)
+option(MARL_BUILD_TESTS "Build tests" ON)
+
+###########################################################
 # Directories
 ###########################################################
 set(MARL_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -29,11 +35,13 @@ set(GOOGLETEST_DIR ${THIRD_PARTY_DIR}/googletest)
 ###########################################################
 # Submodules
 ###########################################################
-set(BUILD_TESTS 1)
-if(NOT EXISTS ${THIRD_PARTY_DIR}/googletest/.git)
-    message(WARNING "third_party/googletest submodule missing.\nRun: git submodule update --init\nto build tests.")
-    set(BUILD_TESTS 0)
-endif()
+if(MARL_BUILD_TESTS)
+    if(NOT EXISTS ${THIRD_PARTY_DIR}/googletest/.git)
+        message(WARNING "third_party/googletest submodule missing.")
+        message(WARNING "Run: `git submodule update --init` to build tests.")
+        set(MARL_BUILD_TESTS OFF)
+    endif()
+endif(MARL_BUILD_TESTS)
 
 ###########################################################
 # File lists
@@ -95,5 +103,18 @@ if(BUILD_TESTS)
         FOLDER "Tests"
     )
     target_link_libraries(marl-unittests marl "${MARL_OS_LIBS}")
-
 endif(BUILD_TESTS)
+
+if(MARL_BUILD_EXAMPLES)
+    function(BUILD_EXAMPLE name)
+        add_executable(${name} "${CMAKE_CURRENT_SOURCE_DIR}/examples/${name}.cpp")
+        set_target_properties(${name} PROPERTIES
+            INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/include"
+            FOLDER "Examples"
+        )
+        target_link_libraries(${name} marl "${MARL_OS_LIBS}")
+    endfunction(BUILD_EXAMPLE)
+
+    BUILD_EXAMPLE(fractal)
+
+endif(MARL_BUILD_EXAMPLES)
