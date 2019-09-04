@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This is an example application that uses Marl to parallize the calculation of
+// This is an example application that uses Marl to parallelize the calculation of
 // a Julia fractal.
 
 #include <marl/defer.h>
