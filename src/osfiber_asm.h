@@ -95,9 +95,7 @@ OSFiber* OSFiber::createFiber(size_t stackSize,
 }
 
 void OSFiber::run(OSFiber* self) {
-  std::function<void()> func;
-  std::swap(func, self->target);
-  func();
+  self->target();
 }
 
 void OSFiber::switchTo(OSFiber* fiber) {
