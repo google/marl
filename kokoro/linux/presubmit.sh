@@ -9,9 +9,15 @@ git submodule update --init
 
 mkdir build
 cd build
-cmake .. -DMARL_BUILD_EXAMPLES=1
-make --jobs=$(nproc)
 
-./marl-unittests
+build_and_run() {
+    cmake .. -DMARL_BUILD_EXAMPLES=1 $1
+    make --jobs=$(nproc)
 
-./fractal
+    ./marl-unittests
+    ./fractal
+}
+
+build_and_run ""
+build_and_run "-DMARL_ASAN=1"
+build_and_run "-DMARL_MSAN=1"

@@ -23,6 +23,12 @@ project(Marl C CXX ASM)
 ###########################################################
 option(MARL_BUILD_EXAMPLES "Build example applications" OFF)
 option(MARL_BUILD_TESTS "Build tests" ON)
+option(MARL_ASAN "Build marl with address sanitizer" OFF)
+option(MARL_TSAN "Build marl with thread sanitizer" OFF)
+
+if (MARL_ASAN AND MARL_TSAN)
+    message(FATAL_ERROR "MARL_ASAN and MARL_TSAN are mutually exclusive")
+endif (MARL_ASAN AND MARL_TSAN)
 
 ###########################################################
 # Directories
@@ -76,13 +82,25 @@ endif()
 ###########################################################
 # Targets
 ###########################################################
+
+# marl
 add_library(marl STATIC ${MARL_LIST})
 set_target_properties(marl PROPERTIES
     INCLUDE_DIRECTORIES "${MARL_INCLUDE_DIR}"
     POSITION_INDEPENDENT_CODE 1
 )
+
+if (MARL_ASAN)
+    target_compile_options(marl PUBLIC "-fsanitize=address")
+    target_link_libraries(marl "-fsanitize=address")
+elseif (MARL_MSAN)
+    target_compile_options(marl PUBLIC "-fsanitize=memory")
+    target_link_libraries(marl "-fsanitize=memory")
+endif ()
+
 target_link_libraries(marl "${MARL_OS_LIBS}")
 
+# tests
 if(MARL_BUILD_TESTS)
     file(GLOB MARL_TEST_LIST
         ${MARL_SRC_DIR}/*_test.cpp
@@ -105,6 +123,7 @@ if(MARL_BUILD_TESTS)
     target_link_libraries(marl-unittests marl "${MARL_OS_LIBS}")
 endif(MARL_BUILD_TESTS)
 
+# examples
 if(MARL_BUILD_EXAMPLES)
     function(BUILD_EXAMPLE name)
         add_executable(${name} "${CMAKE_CURRENT_SOURCE_DIR}/examples/${name}.cpp")
