@@ -10,7 +10,7 @@ Marl uses a combination of fibers and threads to allow efficient execution of ta
 
 Marl supports Windows, macOS, Linux, Fuchsia and Android (arm, aarch64, ppc64 (ELFv2), x86 and x64).
 
-Marl has no dependencies on other libraries (with exception on googletest fo building the optional unit tests).
+Marl has no dependencies on other libraries (with exception on googletest for building the optional unit tests).
 
 Marl is in early development and will have breaking API changes.
 
