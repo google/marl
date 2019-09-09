@@ -15,6 +15,7 @@
 // This is an example application that uses Marl to parallelize the calculation
 // of a Julia fractal.
 
+
 #include <marl/defer.h>
 #include <marl/scheduler.h>
 #include <marl/thread.h>
