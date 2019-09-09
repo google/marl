@@ -53,21 +53,40 @@ endif(MARL_BUILD_TESTS)
 ###########################################################
 # File lists
 ###########################################################
-file(GLOB MARL_FULL_LIST
-    ${MARL_SRC_DIR}/*.cpp
-    ${MARL_SRC_DIR}/*.h
-    ${MARL_SRC_DIR}/*.c
+file(GLOB MARL_LIST
+    ${MARL_SRC_DIR}/debug.cpp
+    ${MARL_SRC_DIR}/scheduler.cpp
+    ${MARL_SRC_DIR}/thread.cpp
+    ${MARL_SRC_DIR}/trace.cpp
+    ${MARL_SRC_DIR}/osfiber_aarch64.c
+    ${MARL_SRC_DIR}/osfiber_arm.c
+    ${MARL_SRC_DIR}/osfiber_ppc64.c
+    ${MARL_SRC_DIR}/osfiber_x64.c
+    ${MARL_SRC_DIR}/osfiber_x86.c
 )
-
 if(NOT MSVC)
-    file(GLOB MARL_ASSEMBLY_LIST ${MARL_SRC_DIR}/*.S)
-    list(APPEND MARL_FULL_LIST ${MARL_ASSEMBLY_LIST})
+    list(APPEND MARL_LIST
+        ${MARL_SRC_DIR}/osfiber_asm_aarch64.S
+        ${MARL_SRC_DIR}/osfiber_asm_arm.S
+        ${MARL_SRC_DIR}/osfiber_asm_ppc64.S
+        ${MARL_SRC_DIR}/osfiber_asm_x64.S
+        ${MARL_SRC_DIR}/osfiber_asm_x86.S
+    )
 endif(NOT MSVC)
 
-set(MARL_LIST ${MARL_FULL_LIST})
-set(MARL_TEST_LIST ${MARL_FULL_LIST})
-list(FILTER MARL_LIST EXCLUDE REGEX ".*_test\\..*")
-list(FILTER MARL_TEST_LIST INCLUDE REGEX ".*_test\\..*")
+file(GLOB MARL_TEST_LIST
+    ${MARL_SRC_DIR}/blockingcall_test.cpp
+    ${MARL_SRC_DIR}/conditionvariable_test.cpp
+    ${MARL_SRC_DIR}/containers_test.cpp
+    ${MARL_SRC_DIR}/defer_test.cpp
+    ${MARL_SRC_DIR}/marl_test.cpp
+    ${MARL_SRC_DIR}/marl_test.h
+    ${MARL_SRC_DIR}/osfiber_test.cpp
+    ${MARL_SRC_DIR}/pool_test.cpp
+    ${MARL_SRC_DIR}/scheduler_test.cpp
+    ${MARL_SRC_DIR}/ticket_test.cpp
+    ${MARL_SRC_DIR}/waitgroup_test.cpp
+)
 
 ###########################################################
 # OS libraries
