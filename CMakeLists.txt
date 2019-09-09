@@ -23,7 +23,7 @@ project(Marl C CXX ASM)
 ###########################################################
 option(MARL_WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
 option(MARL_BUILD_EXAMPLES "Build example applications" OFF)
-option(MARL_BUILD_TESTS "Build tests" ON)
+option(MARL_BUILD_TESTS "Build tests" OFF)
 option(MARL_ASAN "Build marl with address sanitizer" OFF)
 option(MARL_TSAN "Build marl with thread sanitizer" OFF)
 
