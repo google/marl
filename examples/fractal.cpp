@@ -19,7 +19,7 @@
 #include <marl/scheduler.h>
 #include <marl/thread.h>
 #include <marl/waitgroup.h>
-
+#include <random>
 #include <fstream>
 
 #include <math.h>
@@ -161,6 +161,14 @@ int main(int argc, const char** argv) {
   // The wait group is constructed with an initial count of imageHeight as
   // there will be a total of imageHeight tasks.
   marl::WaitGroup wg(imageHeight);
+  
+  //We should not use the funtion rand(), because it is not thread safe
+  std::random_device random_device;
+  std::mt19937 random_number_engine(random_device());
+  std::uniform_real_distribution<> random_distribution(0.0, 1.0);
+  auto random_unit = [&](){ 
+    return float(random_distribution(random_number_engine)); 
+  };
 
   // For each line of the image...
   for (uint32_t y = 0; y < imageHeight; y++) {
@@ -175,8 +183,8 @@ int main(int argc, const char** argv) {
         // Calculate the fractal pixel color.
         Color<float> color = {};
         for (int sample = 0; sample < samplesPerPixel; sample++) {
-          auto fx = float(x) + (rand() / float(RAND_MAX));
-          auto fy = float(y) + (rand() / float(RAND_MAX));
+          auto fx = float(x) + random_unit();
+          auto fy = float(y) + random_unit();
           auto dx = float(fx) / float(imageWidth);
           auto dy = float(fy) / float(imageHeight);
           color += julia(lerp(dx, windowMinX, windowMaxX),
