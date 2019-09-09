@@ -185,5 +185,6 @@ if(MARL_BUILD_EXAMPLES)
     endfunction(build_example)
 
     build_example(fractal)
+    build_example(primes)
 
 endif(MARL_BUILD_EXAMPLES)
