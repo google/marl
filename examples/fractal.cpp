@@ -137,7 +137,8 @@ bool writeBMP(const Color<uint8_t>* texels,
 // Constants used for rendering the fractal.
 constexpr uint32_t imageWidth = 2048;
 constexpr uint32_t imageHeight = 2048;
-constexpr int samplesPerPixel = 8;
+constexpr int samplesPerPixelW = 3;
+constexpr int samplesPerPixelH = 3;
 constexpr float windowMinX = -0.5f;
 constexpr float windowMaxX = +0.5f;
 constexpr float windowMinY = -0.5f;
@@ -174,15 +175,17 @@ int main(int argc, const char** argv) {
       for (uint32_t x = 0; x < imageWidth; x++) {
         // Calculate the fractal pixel color.
         Color<float> color = {};
-        for (int sample = 0; sample < samplesPerPixel; sample++) {
-          auto fx = float(x) + (rand() / float(RAND_MAX));
-          auto fy = float(y) + (rand() / float(RAND_MAX));
-          auto dx = float(fx) / float(imageWidth);
-          auto dy = float(fy) / float(imageHeight);
-          color += julia(lerp(dx, windowMinX, windowMaxX),
-                         lerp(dy, windowMinY, windowMaxY), cx, cy);
+        for (int sy = 0; sy < samplesPerPixelH; sy++) {
+          auto fy = float(y) + (sy / float(samplesPerPixelH));
+          for (int sx = 0; sx < samplesPerPixelW; sx++) {
+            auto fx = float(x) + (sx / float(samplesPerPixelW));
+            auto dx = float(fx) / float(imageWidth);
+            auto dy = float(fy) / float(imageHeight);
+            color += julia(lerp(dx, windowMinX, windowMaxX),
+                           lerp(dy, windowMinY, windowMaxY), cx, cy);
+          }
         }
-        color /= samplesPerPixel;
+        color /= samplesPerPixelW * samplesPerPixelH;
         pixels[x + y * imageWidth] = {static_cast<uint8_t>(color.r * 255),
                                       static_cast<uint8_t>(color.g * 255),
                                       static_cast<uint8_t>(color.b * 255)};
