@@ -54,7 +54,7 @@ endif(MARL_BUILD_TESTS)
 ###########################################################
 # File lists
 ###########################################################
-file(GLOB MARL_LIST
+set(MARL_LIST
     ${MARL_SRC_DIR}/debug.cpp
     ${MARL_SRC_DIR}/scheduler.cpp
     ${MARL_SRC_DIR}/thread.cpp
@@ -167,8 +167,18 @@ endif(MARL_INSTALL)
 
 # tests
 if(MARL_BUILD_TESTS)
-    file(GLOB MARL_TEST_LIST
-        ${MARL_SRC_DIR}/*_test.cpp
+    set(MARL_TEST_LIST
+        ${MARL_SRC_DIR}/blockingcall_test.cpp
+        ${MARL_SRC_DIR}/conditionvariable_test.cpp
+        ${MARL_SRC_DIR}/containers_test.cpp
+        ${MARL_SRC_DIR}/defer_test.cpp
+        ${MARL_SRC_DIR}/marl_test.cpp
+        ${MARL_SRC_DIR}/marl_test.h
+        ${MARL_SRC_DIR}/osfiber_test.cpp
+        ${MARL_SRC_DIR}/pool_test.cpp
+        ${MARL_SRC_DIR}/scheduler_test.cpp
+        ${MARL_SRC_DIR}/ticket_test.cpp
+        ${MARL_SRC_DIR}/waitgroup_test.cpp
         ${GOOGLETEST_DIR}/googletest/src/gtest-all.cc
     )
 
