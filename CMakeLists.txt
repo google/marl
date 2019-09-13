@@ -139,12 +139,6 @@ target_link_libraries(marl "${MARL_OS_LIBS}")
 if(MARL_INSTALL)
     include(GNUInstallDirs)
 
-    if(UNIX)
-        set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake" CACHE STRING "")
-    else(UNIX)
-        set(CMAKE_INSTALL_CMAKEDIR "cmake" CACHE STRING "")
-    endif(UNIX)
-
     install(DIRECTORY ${MARL_INCLUDE_DIR}/marl
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         USE_SOURCE_PERMISSIONS
@@ -161,7 +155,7 @@ if(MARL_INSTALL)
     install(EXPORT marl-targets
         FILE marl-config.cmake
         NAMESPACE marl::
-        DESTINATION ${CMAKE_INSTALL_CMAKEDIR}/marl
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/marl
     )
 endif(MARL_INSTALL)
 
