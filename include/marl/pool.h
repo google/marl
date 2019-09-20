@@ -377,7 +377,7 @@ inline void UnboundedPool<T, POLICY>::borrow(size_t n, const F& f) const {
   for (size_t i = 0; i < n; i++) {
     if (storage->free == nullptr) {
       auto count = std::max<size_t>(storage->items.size(), 32);
-      for (size_t i = 0; i < count; i++) {
+      for (size_t j = 0; j < count; j++) {
         auto item = new Item();
         if (POLICY == PoolPolicy::Preserve) {
           item->construct();

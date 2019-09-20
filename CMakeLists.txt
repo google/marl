@@ -56,19 +56,19 @@ set(MARL_LIST
     ${MARL_SRC_DIR}/scheduler.cpp
     ${MARL_SRC_DIR}/thread.cpp
     ${MARL_SRC_DIR}/trace.cpp
-    ${MARL_SRC_DIR}/osfiber_aarch64.c
-    ${MARL_SRC_DIR}/osfiber_arm.c
-    ${MARL_SRC_DIR}/osfiber_ppc64.c
-    ${MARL_SRC_DIR}/osfiber_x64.c
-    ${MARL_SRC_DIR}/osfiber_x86.c
 )
 if(NOT MSVC)
     list(APPEND MARL_LIST
+        ${MARL_SRC_DIR}/osfiber_aarch64.c
+        ${MARL_SRC_DIR}/osfiber_arm.c
         ${MARL_SRC_DIR}/osfiber_asm_aarch64.S
         ${MARL_SRC_DIR}/osfiber_asm_arm.S
         ${MARL_SRC_DIR}/osfiber_asm_ppc64.S
         ${MARL_SRC_DIR}/osfiber_asm_x64.S
         ${MARL_SRC_DIR}/osfiber_asm_x86.S
+        ${MARL_SRC_DIR}/osfiber_ppc64.c
+        ${MARL_SRC_DIR}/osfiber_x64.c
+        ${MARL_SRC_DIR}/osfiber_x86.c
     )
 endif(NOT MSVC)
 
@@ -89,7 +89,12 @@ endif()
 
 function(marl_set_target_options target)
     # Enable all warnings
-    if(NOT MSVC)
+    if(MSVC)
+        target_compile_options(${target} PRIVATE
+            "-W4"
+            "/wd4127" # conditional expression is constant
+        )
+    else()
         target_compile_options(${target} PRIVATE "-Wall")
     endif()
 
