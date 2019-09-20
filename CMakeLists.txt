@@ -25,12 +25,9 @@ option(MARL_WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
 option(MARL_BUILD_EXAMPLES "Build example applications" OFF)
 option(MARL_BUILD_TESTS "Build tests" OFF)
 option(MARL_ASAN "Build marl with address sanitizer" OFF)
+option(MARL_MSAN "Build marl with memory sanitizer" OFF)
 option(MARL_TSAN "Build marl with thread sanitizer" OFF)
 option(MARL_INSTALL "Create marl install target" OFF)
-
-if(MARL_ASAN AND MARL_TSAN)
-    message(FATAL_ERROR "MARL_ASAN and MARL_TSAN are mutually exclusive")
-endif(MARL_ASAN AND MARL_TSAN)
 
 ###########################################################
 # Directories
@@ -116,6 +113,9 @@ function(marl_set_target_options target)
     elseif(MARL_MSAN)
         target_compile_options(${target} PUBLIC "-fsanitize=memory")
         target_link_libraries(${target} "-fsanitize=memory")
+    elseif(MARL_TSAN)
+        target_compile_options(${target} PUBLIC "-fsanitize=thread")
+        target_link_libraries(${target} "-fsanitize=thread")
     endif()
 
     target_include_directories(${target} PRIVATE ${MARL_INCLUDE_DIR})
