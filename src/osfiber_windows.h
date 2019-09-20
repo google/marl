@@ -69,8 +69,8 @@ OSFiber* OSFiber::createFiber(size_t stackSize,
   return out;
 }
 
-void OSFiber::switchTo(OSFiber* fiber) {
-  SwitchToFiber(fiber->fiber);
+void OSFiber::switchTo(OSFiber* to) {
+  SwitchToFiber(to->fiber);
 }
 
 void WINAPI OSFiber::run(void* self) {
