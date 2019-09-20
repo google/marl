@@ -19,6 +19,8 @@
 
 #include <stdint.h>
 #include <cstdlib>
+#include <memory>
+#include <utility>  // std::forward
 
 namespace marl {
 
@@ -49,6 +51,40 @@ inline void aligned_free(void* ptr) {
   auto allocation = aligned - offset;
   delete[] allocation;
 }
+
+// aligned_new allocates and constructs an object of type T, respecting the
+// alignment of the type.
+// The pointer returned by aligned_new() must be deleted with aligned_delete().
+template <typename T, typename... ARGS>
+T* aligned_new(ARGS&&... args) {
+  auto ptr = aligned_malloc(alignof(T), sizeof(T));
+  new (ptr) T(std::forward<ARGS>(args)...);
+  return reinterpret_cast<T*>(ptr);
+}
+
+// aligned_delete() destructs and frees the object allocated with aligned_new().
+template <typename T>
+void aligned_delete(T* object) {
+  object->~T();
+  aligned_free(object);
+}
+
+// make_aligned_shared returns a new object wrapped in a std::shared_ptr that
+// respects the alignemnt of the type.
+template <typename T, typename... ARGS>
+inline std::shared_ptr<T> make_aligned_shared(ARGS&&... args) {
+  auto ptr = aligned_new<T>(std::forward<ARGS>(args)...);
+  return std::shared_ptr<T>(ptr, aligned_delete<T>);
+}
+
+// aligned_storage is a replacement for std::aligned_storage that isn't busted
+// on older versions of MSVC.
+template <size_t SIZE, size_t ALIGNMENT>
+struct aligned_storage {
+  struct alignas(ALIGNMENT) type {
+    unsigned char data[SIZE];
+  };
+};
 
 }  // namespace marl
 
