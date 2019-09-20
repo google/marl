@@ -16,6 +16,7 @@
 #define marl_pool_h
 
 #include "conditionvariable.h"
+#include "memory.h"
 
 #include <atomic>
 #include <mutex>
@@ -90,7 +91,7 @@ class Pool {
     // destruct() calls the destructor on the item's data.
     inline void destruct();
 
-    using Data = typename std::aligned_storage<sizeof(T), alignof(T)>::type;
+    using Data = typename aligned_storage<sizeof(T), alignof(T)>::type;
     Data data;
     std::atomic<int> refcount = {0};
     Item* next = nullptr;  // pointer to the next free item in the pool.
@@ -233,12 +234,12 @@ class BoundedPool : public Pool<T> {
     inline ~Storage();
     inline void return_(Item*) override;
 
+    Item items[N];
     std::mutex mutex;
     ConditionVariable returned;
-    Item items[N];
     Item* free = nullptr;
   };
-  std::shared_ptr<Storage> storage = std::make_shared<Storage>();
+  std::shared_ptr<Storage> storage = make_aligned_shared<Storage>();
 };
 
 template <typename T, int N, PoolPolicy POLICY>
@@ -359,7 +360,7 @@ UnboundedPool<T, POLICY>::Storage::~Storage() {
     if (POLICY == PoolPolicy::Preserve) {
       item->destruct();
     }
-    delete item;
+    aligned_delete(item);
   }
 }
 
@@ -378,7 +379,7 @@ inline void UnboundedPool<T, POLICY>::borrow(size_t n, const F& f) const {
     if (storage->free == nullptr) {
       auto count = std::max<size_t>(storage->items.size(), 32);
       for (size_t j = 0; j < count; j++) {
-        auto item = new Item();
+        auto item = aligned_new<Item>();
         if (POLICY == PoolPolicy::Preserve) {
           item->construct();
         }

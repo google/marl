@@ -32,3 +32,31 @@ TEST(MemoryTest, AlignedMalloc) {
     }
   }
 }
+
+struct alignas(16) StructWith16ByteAlignment {
+  uint8_t i;
+  uint8_t padding[15];
+};
+struct alignas(32) StructWith32ByteAlignment {
+  uint8_t i;
+  uint8_t padding[31];
+};
+struct alignas(64) StructWith64ByteAlignment {
+  uint8_t i;
+  uint8_t padding[63];
+};
+
+TEST(MemoryTest, AlignedNew) {
+  auto s16 = marl::aligned_new<StructWith16ByteAlignment>();
+  auto s32 = marl::aligned_new<StructWith32ByteAlignment>();
+  auto s64 = marl::aligned_new<StructWith64ByteAlignment>();
+  ASSERT_EQ(alignof(StructWith16ByteAlignment), 16U);
+  ASSERT_EQ(alignof(StructWith32ByteAlignment), 32U);
+  ASSERT_EQ(alignof(StructWith64ByteAlignment), 64U);
+  ASSERT_EQ(reinterpret_cast<uintptr_t>(s16) & 15U, 0U);
+  ASSERT_EQ(reinterpret_cast<uintptr_t>(s32) & 31U, 0U);
+  ASSERT_EQ(reinterpret_cast<uintptr_t>(s64) & 63U, 0U);
+  marl::aligned_delete(s64);
+  marl::aligned_delete(s32);
+  marl::aligned_delete(s16);
+}
