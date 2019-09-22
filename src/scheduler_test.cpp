@@ -41,18 +41,14 @@ TEST_P(WithBoundScheduler, SetAndGetWorkerThreadCount) {
 }
 
 TEST_P(WithBoundScheduler, DestructWithPendingTasks) {
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < 1000; i++) {
     marl::schedule([] {});
   }
 }
 
-/*
-Test failing on windows-msvc-14.14-x86-cmake.
-Bug: https://github.com/google/marl/issues/40
-
 TEST_P(WithBoundScheduler, DestructWithPendingFibers) {
   marl::WaitGroup wg(1);
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < 1000; i++) {
     marl::schedule([=] { wg.wait(); });
   }
   wg.done();
@@ -64,7 +60,6 @@ TEST_P(WithBoundScheduler, DestructWithPendingFibers) {
   // Rebind a new scheduler so WithBoundScheduler::TearDown() is happy.
   (new marl::Scheduler())->bind();
 }
-*/
 
 TEST_P(WithBoundScheduler, FibersResumeOnSameThread) {
   marl::WaitGroup fence(1);
