@@ -383,7 +383,7 @@ void Scheduler::Worker::run() {
       {
         std::unique_lock<std::mutex> lock(work.mutex);
         work.added.wait(lock, [this] { return work.num > 0 || shutdown; });
-        while (!shutdown) {
+        while (!shutdown || work.num > 0 || numBlockedFibers() > 0U) {
           waitForWork(lock);
           runUntilIdle(lock);
         }
@@ -415,7 +415,9 @@ _Requires_lock_held_(lock) void Scheduler::Worker::waitForWork(
     spinForWork();
     lock.lock();
   }
-  work.added.wait(lock, [this] { return work.num > 0 || shutdown; });
+  work.added.wait(lock, [this] {
+    return work.num > 0 || (shutdown && numBlockedFibers() == 0U);
+  });
 }
 
 void Scheduler::Worker::spinForWork() {
