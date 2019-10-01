@@ -22,26 +22,30 @@ class AllocatorTest : public testing::Test {
 };
 
 TEST_F(AllocatorTest, AlignedAllocate) {
+  std::vector<bool> guards = {false, true};
   std::vector<size_t> sizes = {1,   2,   3,   4,   5,   7,   8,   14,  16,  17,
                                31,  34,  50,  63,  64,  65,  100, 127, 128, 129,
                                200, 255, 256, 257, 500, 511, 512, 513};
   std::vector<size_t> alignments = {1, 2, 4, 8, 16, 32, 64, 128};
-  for (auto alignment : alignments) {
-    for (auto size : sizes) {
-      marl::Allocation::Request request;
-      request.alignment = alignment;
-      request.size = size;
+  for (auto useGuards : guards) {
+    for (auto alignment : alignments) {
+      for (auto size : sizes) {
+        marl::Allocation::Request request;
+        request.alignment = alignment;
+        request.size = size;
+        request.useGuards = useGuards;
 
-      auto allocation = allocator->allocate(request);
-      auto ptr = allocation.ptr;
-      ASSERT_EQ(allocation.request.size, request.size);
-      ASSERT_EQ(allocation.request.alignment, request.alignment);
-      ASSERT_EQ(allocation.request.use_guards, request.use_guards);
-      ASSERT_EQ(allocation.request.usage, request.usage);
-      ASSERT_EQ(reinterpret_cast<uintptr_t>(ptr) & (alignment - 1), 0U);
-      memset(ptr, 0,
-             size);  // Check the memory was actually allocated.
-      allocator->free(allocation);
+        auto allocation = allocator->allocate(request);
+        auto ptr = allocation.ptr;
+        ASSERT_EQ(allocation.request.size, request.size);
+        ASSERT_EQ(allocation.request.alignment, request.alignment);
+        ASSERT_EQ(allocation.request.useGuards, request.useGuards);
+        ASSERT_EQ(allocation.request.usage, request.usage);
+        ASSERT_EQ(reinterpret_cast<uintptr_t>(ptr) & (alignment - 1), 0U);
+        memset(ptr, 0,
+               size);  // Check the memory was actually allocated.
+        allocator->free(allocation);
+      }
     }
   }
 }
@@ -72,4 +76,15 @@ TEST_F(AllocatorTest, Create) {
   allocator->destroy(s64);
   allocator->destroy(s32);
   allocator->destroy(s16);
+}
+
+TEST_F(AllocatorTest, Guards) {
+  marl::Allocation::Request request;
+  request.alignment = 16;
+  request.size = 16;
+  request.useGuards = true;
+  auto alloc = allocator->allocate(request);
+  auto ptr = reinterpret_cast<uint8_t*>(alloc.ptr);
+  EXPECT_DEATH(ptr[-1] = 1, "");
+  EXPECT_DEATH(ptr[marl::pageSize()] = 1, "");
 }
