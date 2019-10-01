@@ -15,6 +15,7 @@
 #include "marl/memory.h"
 
 #include "marl/debug.h"
+#include "marl/sanitizers.h"
 
 #include <cstring>
 
@@ -22,9 +23,12 @@
 #include <sys/mman.h>
 #include <unistd.h>
 namespace {
+// This was a static in pageSize(), but due to the following TSAN false-positive
+// bug, this has been moved out to a global.
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=68338
+const size_t kPageSize = sysconf(_SC_PAGESIZE);
 inline size_t pageSize() {
-  static auto size = sysconf(_SC_PAGESIZE);
-  return size;
+  return kPageSize;
 }
 inline void* allocatePages(size_t count) {
   auto mapping = mmap(nullptr, count * pageSize(), PROT_READ | PROT_WRITE,
