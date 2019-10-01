@@ -105,7 +105,9 @@ Allocator::unique_ptr<OSFiber> OSFiber::createFiber(
   request.size = stackSize;
   request.alignment = 16;
   request.usage = Allocation::Usage::Stack;
-  // TODO: guards
+#if MARL_USE_FIBER_STACK_GUARDS
+  request.useGuards = true;
+#endif
 
   auto out = allocator->make_unique<OSFiber>(allocator);
   out->context = {};

@@ -27,6 +27,10 @@
 
 namespace marl {
 
+// pageSize() returns the size in bytes of a virtual memory page for the host
+// system.
+size_t pageSize();
+
 // Allocation holds the result of a memory allocation from an Allocator.
 struct Allocation {
   // Intended usage of the allocation. Used for allocation trackers.
@@ -42,7 +46,7 @@ struct Allocation {
   struct Request {
     size_t size = 0;                 // The size of the allocation in bytes.
     size_t alignment = 0;            // The minimum alignment of the allocation.
-    bool use_guards = false;         // Whether the allocation is guarded.
+    bool useGuards = false;          // Whether the allocation is guarded.
     Usage usage = Usage::Undefined;  // Intended usage of the allocation.
   };
 

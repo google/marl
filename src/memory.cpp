@@ -14,7 +14,73 @@
 
 #include "marl/memory.h"
 
+#include "marl/debug.h"
+
 #include <cstring>
+
+#if defined(__linux__) || defined(__APPLE__)
+#include <sys/mman.h>
+#include <unistd.h>
+namespace {
+inline size_t pageSize() {
+  static auto size = sysconf(_SC_PAGESIZE);
+  return size;
+}
+inline void* allocatePages(size_t count) {
+  auto mapping = mmap(nullptr, count * pageSize(), PROT_READ | PROT_WRITE,
+                      MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  MARL_ASSERT(mapping != MAP_FAILED, "Failed to allocate %d pages", int(count));
+  if (mapping == MAP_FAILED) {
+    mapping = nullptr;
+  }
+  return mapping;
+}
+inline void freePages(void* ptr, size_t count) {
+  auto res = munmap(ptr, count * pageSize());
+  (void)res;
+  MARL_ASSERT(res == 0, "Failed to free %d pages at %p", int(count), ptr);
+}
+inline void protectPage(void* addr) {
+  auto res = mprotect(addr, pageSize(), PROT_NONE);
+  (void)res;
+  MARL_ASSERT(res == 0, "Failed to protect page at %p", addr);
+}
+}  // anonymous namespace
+#elif defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN 1
+#include <Windows.h>
+namespace {
+inline size_t pageSize() {
+  static auto size = [] {
+    SYSTEM_INFO systemInfo = {};
+    GetSystemInfo(&systemInfo);
+    return systemInfo.dwPageSize;
+  }();
+  return size;
+}
+inline void* allocatePages(size_t count) {
+  auto mapping = VirtualAlloc(nullptr, count * pageSize(),
+                              MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  MARL_ASSERT(mapping != nullptr, "Failed to allocate %d pages", int(count));
+  return mapping;
+}
+inline void freePages(void* ptr, size_t count) {
+  (void)count;
+  auto res = VirtualFree(ptr, 0, MEM_RELEASE);
+  (void)res;
+  MARL_ASSERT(res != 0, "Failed to free %d pages at %p", int(count), ptr);
+}
+inline void protectPage(void* addr) {
+  DWORD oldVal = 0;
+  auto res = VirtualProtect(addr, pageSize(), PAGE_NOACCESS, &oldVal);
+  (void)res;
+  MARL_ASSERT(res != 0, "Failed to protect page at %p", addr);
+}
+}  // anonymous namespace
+#else
+// TODO: Fuchsia support
+#error "Page based allocation not implemented for this platform"
+#endif
 
 namespace {
 
@@ -23,10 +89,58 @@ inline T alignUp(T val, T alignment) {
   return alignment * ((val + alignment - 1) / alignment);
 }
 
-// aligned_malloc() allocates size bytes of uninitialized storage with the
+// pagedMalloc() allocates size bytes of uninitialized storage with the
+// specified minimum byte alignment using OS specific page mapping calls.
+// If guardLow is true then reads or writes to the page below the returned
+// address will cause a page fault.
+// If guardHigh is true then reads or writes to the page above the allocated
+// block will cause a page fault.
+// The pointer returned must be freed with pagedFree().
+void* pagedMalloc(size_t alignment,
+                  size_t size,
+                  bool guardLow,
+                  bool guardHigh) {
+  (void)alignment;
+  MARL_ASSERT(alignment < pageSize(),
+              "alignment (0x%x) must be less than the page size (0x%x)",
+              int(alignment), int(pageSize()));
+  auto numRequestedPages = (size + pageSize() - 1) / pageSize();
+  auto numTotalPages =
+      numRequestedPages + (guardLow ? 1 : 0) + (guardHigh ? 1 : 0);
+  auto mem = reinterpret_cast<uint8_t*>(allocatePages(numTotalPages));
+  if (guardLow) {
+    protectPage(mem);
+    mem += pageSize();
+  }
+  if (guardHigh) {
+    protectPage(mem + numRequestedPages * pageSize());
+  }
+  return mem;
+}
+
+// pagedFree() frees the memory allocated with pagedMalloc().
+void pagedFree(void* ptr,
+               size_t alignment,
+               size_t size,
+               bool guardLow,
+               bool guardHigh) {
+  (void)alignment;
+  MARL_ASSERT(alignment < pageSize(),
+              "alignment (0x%x) must be less than the page size (0x%x)",
+              int(alignment), int(pageSize()));
+  auto numRequestedPages = (size + pageSize() - 1) / pageSize();
+  auto numTotalPages =
+      numRequestedPages + (guardLow ? 1 : 0) + (guardHigh ? 1 : 0);
+  if (guardLow) {
+    ptr = reinterpret_cast<uint8_t*>(ptr) - pageSize();
+  }
+  freePages(ptr, numTotalPages);
+}
+
+// alignedMalloc() allocates size bytes of uninitialized storage with the
 // specified minimum byte alignment. The pointer returned must be freed with
-// aligned_free().
-inline void* aligned_malloc(size_t alignment, size_t size) {
+// alignedFree().
+inline void* alignedMalloc(size_t alignment, size_t size) {
   size_t allocSize = size + alignment + sizeof(void*);
   auto allocation = malloc(allocSize);
   auto aligned = reinterpret_cast<uint8_t*>(
@@ -35,8 +149,8 @@ inline void* aligned_malloc(size_t alignment, size_t size) {
   return aligned;
 }
 
-// aligned_free() frees memory allocated by aligned_malloc.
-inline void aligned_free(void* ptr, size_t size) {
+// alignedFree() frees memory allocated by alignedMalloc.
+inline void alignedFree(void* ptr, size_t size) {
   void* base;
   memcpy(&base, reinterpret_cast<uint8_t*>(ptr) + size, sizeof(size_t));
   free(base);
@@ -50,14 +164,17 @@ class DefaultAllocator : public marl::Allocator {
       const marl::Allocation::Request& request) override {
     void* ptr = nullptr;
 
-    MARL_ASSERT(!request.use_guards, "TODO: Guards not yet implemented");
-    if (request.alignment > 1U) {
-      ptr = ::aligned_malloc(request.alignment, request.size);
+    if (request.useGuards) {
+      ptr = ::pagedMalloc(request.alignment, request.size, true, true);
+    } else if (request.alignment > 1U) {
+      ptr = ::alignedMalloc(request.alignment, request.size);
     } else {
       ptr = ::malloc(request.size);
     }
 
     MARL_ASSERT(ptr != nullptr, "Allocation failed");
+    MARL_ASSERT(reinterpret_cast<uintptr_t>(ptr) % request.alignment == 0,
+                "Allocation gave incorrect alignment");
 
     marl::Allocation allocation;
     allocation.ptr = ptr;
@@ -66,10 +183,11 @@ class DefaultAllocator : public marl::Allocator {
   }
 
   virtual void free(const marl::Allocation& allocation) override {
-    MARL_ASSERT(!allocation.request.use_guards,
-                "TODO: Guards not yet implemented");
-    if (allocation.request.alignment > 1U) {
-      ::aligned_free(allocation.ptr, allocation.request.size);
+    if (allocation.request.useGuards) {
+      ::pagedFree(allocation.ptr, allocation.request.alignment,
+                  allocation.request.size, true, true);
+    } else if (allocation.request.alignment > 1U) {
+      ::alignedFree(allocation.ptr, allocation.request.size);
     } else {
       ::free(allocation.ptr);
     }
@@ -83,5 +201,9 @@ DefaultAllocator DefaultAllocator::instance;
 namespace marl {
 
 Allocator* Allocator::Default = &DefaultAllocator::instance;
+
+size_t pageSize() {
+  return ::pageSize();
+}
 
 }  // namespace marl
