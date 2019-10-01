@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef marl_blocking_call_h
+#define marl_blocking_call_h
+
 #include "defer.h"
 #include "waitgroup.h"
 
@@ -78,3 +81,5 @@ auto inline blocking_call(F&& f, Args&&... args) -> decltype(f(args...)) {
 }
 
 }  // namespace marl
+
+#endif  // marl_blocking_call_h
