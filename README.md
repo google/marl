@@ -4,13 +4,13 @@ Marl is a hybrid thread / fiber task scheduler written in C++ 11.
 
 ## About
 
-Marl is a C++ 11 library that provides a fluent interface for running tasks across a number of threads.
+Marl is a C++ 11 library that provides a fluent interface for running tasks across saveral threads.
 
-Marl uses a combination of fibers and threads to allow efficient execution of tasks that can block, while keeping a fixed number of hardware threads.
+Marl uses a combination of fibers and threads to allow efficient execution of tasks that can block while keeping a fixed number of hardware threads.
 
 Marl supports Windows, macOS, Linux, Fuchsia and Android (arm, aarch64, ppc64 (ELFv2), x86 and x64).
 
-Marl has no dependencies on other libraries (with exception on googletest for building the optional unit tests).
+Marl has no dependencies on other libraries (with an exception on googletest for building the optional unit tests).
 
 Marl is in early development and will have breaking API changes.
 
@@ -20,7 +20,7 @@ Note: This is not an officially supported Google product
 
 ## Building
 
-Marl contains a number of unit tests and examples which can be built using CMake.
+Marl contains many unit tests and examples that can be built using CMake.
 
 Unit tests require fetching the `googletest` external project, which can be done by typing the following in your terminal:
 
