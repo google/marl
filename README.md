@@ -12,12 +12,6 @@ Marl supports Windows, macOS, Linux, Fuchsia and Android (arm, aarch64, ppc64 (E
 
 Marl has no dependencies on other libraries (with an exception on googletest for building the optional unit tests).
 
-Marl is in early development and will have breaking API changes.
-
-**More documentation and examples coming soon.**
-
-Note: This is not an officially supported Google product
-
 ## Building
 
 Marl contains many unit tests and examples that can be built using CMake.
@@ -66,3 +60,7 @@ You will also want to add the `marl` public headers to your project's include se
 ```cmake
 target_include_directories($<target> PRIVATE "${MARL_DIR}/include") # replace <target> with the name of your project's target
 ```
+
+---
+
+Note: This is not an officially supported Google product
