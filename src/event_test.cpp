@@ -190,3 +190,16 @@ TEST_P(WithBoundScheduler, EventWaitUntilTimeTaken) {
   }
   wg.wait();
 }
+
+TEST_P(WithBoundScheduler, EventAny) {
+  for (int i = 0; i < 3; i++) {
+    std::vector<marl::Event> events = {
+        marl::Event(marl::Event::Mode::Auto),
+        marl::Event(marl::Event::Mode::Auto),
+        marl::Event(marl::Event::Mode::Auto),
+    };
+    auto any = marl::Event::any(events.begin(), events.end());
+    events[i].signal();
+    ASSERT_TRUE(any.isSignalled());
+  }
+}
