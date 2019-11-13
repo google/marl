@@ -17,6 +17,15 @@
 
 #include "marl_test.h"
 
+namespace std {
+namespace chrono {
+template <typename Rep, typename Period>
+std::ostream& operator<<(std::ostream& os, const duration<Rep, Period>& d) {
+  return os << chrono::duration_cast<chrono::microseconds>(d).count() << "ms";
+}
+}  // namespace chrono
+}  // namespace std
+
 TEST_P(WithBoundScheduler, EventIsSignalled) {
   std::vector<marl::Event::Mode> modes = {marl::Event::Mode::Manual,
                                           marl::Event::Mode::Auto};
@@ -117,4 +126,67 @@ TEST_P(WithBoundScheduler, EventSequence) {
     done.wait();
     ASSERT_EQ(sequence, "ABC");
   }
+}
+
+TEST_P(WithBoundScheduler, EventWaitForUnblocked) {
+  auto event = marl::Event(marl::Event::Mode::Manual);
+  auto wg = marl::WaitGroup(1000);
+  for (int i = 0; i < 1000; i++) {
+    marl::schedule([=] {
+      defer(wg.done());
+      auto duration = std::chrono::seconds(10);
+      event.wait_for(duration);
+    });
+  }
+  event.signal();  // unblock
+  wg.wait();
+}
+
+TEST_P(WithBoundScheduler, EventWaitForTimeTaken) {
+  auto event = marl::Event(marl::Event::Mode::Auto);
+  auto wg = marl::WaitGroup(1000);
+  for (int i = 0; i < 1000; i++) {
+    marl::schedule([=] {
+      defer(wg.done());
+      auto duration = std::chrono::milliseconds(10);
+      auto start = std::chrono::system_clock::now();
+      auto triggered = event.wait_for(duration);
+      auto end = std::chrono::system_clock::now();
+      ASSERT_FALSE(triggered);
+      ASSERT_GE(end - start, duration);
+    });
+  }
+  wg.wait();
+}
+
+TEST_P(WithBoundScheduler, EventWaitUntilUnblocked) {
+  auto event = marl::Event(marl::Event::Mode::Manual);
+  auto wg = marl::WaitGroup(1000);
+  for (int i = 0; i < 1000; i++) {
+    marl::schedule([=] {
+      defer(wg.done());
+      auto duration = std::chrono::seconds(10);
+      auto start = std::chrono::system_clock::now();
+      event.wait_until(start + duration);
+    });
+  }
+  event.signal();  // unblock
+  wg.wait();
+}
+
+TEST_P(WithBoundScheduler, EventWaitUntilTimeTaken) {
+  auto event = marl::Event(marl::Event::Mode::Auto);
+  auto wg = marl::WaitGroup(1000);
+  for (int i = 0; i < 1000; i++) {
+    marl::schedule([=] {
+      defer(wg.done());
+      auto duration = std::chrono::milliseconds(10);
+      auto start = std::chrono::system_clock::now();
+      auto triggered = event.wait_until(start + duration);
+      auto end = std::chrono::system_clock::now();
+      ASSERT_FALSE(triggered);
+      ASSERT_GE(end - start, duration);
+    });
+  }
+  wg.wait();
 }

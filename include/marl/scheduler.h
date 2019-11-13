@@ -21,8 +21,10 @@
 
 #include <array>
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <functional>
+#include <map>
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -101,6 +103,12 @@ class Scheduler {
     // yield() must only be called on the currently executing fiber.
     void yield();
 
+    // yield_until() suspends execution of this Fiber, allowing the thread to
+    // work on other tasks. yield_until() may automatically resume sometime
+    // after timeout.
+    // yield_until() must only be called on the currently executing fiber.
+    void yield_until(const std::chrono::system_clock::time_point& timeout);
+
     // schedule() reschedules the suspended Fiber for execution.
     void schedule();
 
@@ -147,6 +155,8 @@ class Scheduler {
   // heap allocations.
   using TaskQueue = std::queue<Task>;
   using FiberQueue = std::queue<Fiber*>;
+  using WaitingFiberQueue =
+      std::multimap<std::chrono::system_clock::time_point, Fiber*>;
 
   // Workers executes Tasks on a single thread.
   // Once a task is started, it may yield to other tasks on the same Worker.
@@ -172,7 +182,10 @@ class Scheduler {
 
     // yield() suspends execution of the current task, and looks for other
     // tasks to start or continue execution.
-    void yield(Fiber* fiber);
+    // If timeout is not nullptr, yield may automatically resume the current
+    // task sometime after timeout.
+    void yield(Fiber* fiber,
+               const std::chrono::system_clock::time_point* timeout);
 
     // enqueue(Fiber*) enqueues resuming of a suspended fiber.
     void enqueue(Fiber* fiber);
@@ -236,6 +249,10 @@ class Scheduler {
     // frequently putting the thread to sleep and re-waking.
     void spinForWork();
 
+    // enqueueFiberTimeouts() enqueues all the fibers that have finished
+    // waiting.
+    _Requires_lock_held_(lock) void enqueueFiberTimeouts();
+
     // numBlockedFibers() returns the number of fibers currently blocked and
     // held externally.
     _Requires_lock_held_(lock) inline size_t numBlockedFibers() const {
@@ -247,6 +264,7 @@ class Scheduler {
       std::atomic<uint64_t> num = {0};  // tasks.size() + fibers.size()
       TaskQueue tasks;                  // guarded by mutex
       FiberQueue fibers;                // guarded by mutex
+      WaitingFiberQueue waiting;        // guarded by mutex
       std::condition_variable added;
       std::mutex mutex;
     };

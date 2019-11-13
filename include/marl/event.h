@@ -52,6 +52,26 @@ class Event {
   // state will be automatically cleared.
   inline void wait() const;
 
+  // wait_for() blocks until the event is signaled, or the timeout has been
+  // reached.
+  // If the timeout was reached, then wait_for() return false.
+  // If the event is signalled and event was constructed with the Auto Mode,
+  // then only one call to wait() will unblock before returning, upon which the
+  // signalled state will be automatically cleared.
+  template <typename Rep, typename Period>
+  inline bool wait_for(
+      const std::chrono::duration<Rep, Period>& duration) const;
+
+  // wait_until() blocks until the event is signaled, or the timeout has been
+  // reached.
+  // If the timeout was reached, then wait_for() return false.
+  // If the event is signalled and event was constructed with the Auto Mode,
+  // then only one call to wait() will unblock before returning, upon which the
+  // signalled state will be automatically cleared.
+  template <typename Clock, typename Duration>
+  inline bool wait_until(
+      const std::chrono::time_point<Clock, Duration>& timeout) const;
+
   // test() returns true if the event is signaled, otherwise false.
   // If the event is signalled and was constructed with the Auto Mode
   // then the signalled state will be automatically cleared upon returning.
@@ -107,6 +127,32 @@ void Event::wait() const {
   if (shared->mode == Mode::Auto) {
     shared->signalled = false;
   }
+}
+
+template <typename Rep, typename Period>
+bool Event::wait_for(const std::chrono::duration<Rep, Period>& duration) const {
+  std::unique_lock<std::mutex> lock(shared->mutex);
+  if (!shared->cv.wait_for(lock, duration, [&] { return shared->signalled; })) {
+    return false;
+  }
+  if (shared->mode == Mode::Auto) {
+    shared->signalled = false;
+  }
+  return true;
+}
+
+template <typename Clock, typename Duration>
+bool Event::wait_until(
+    const std::chrono::time_point<Clock, Duration>& timeout) const {
+  std::unique_lock<std::mutex> lock(shared->mutex);
+  if (!shared->cv.wait_until(lock, timeout,
+                             [&] { return shared->signalled; })) {
+    return false;
+  }
+  if (shared->mode == Mode::Auto) {
+    shared->signalled = false;
+  }
+  return true;
 }
 
 bool Event::test() const {
