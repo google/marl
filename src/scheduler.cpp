@@ -219,7 +219,7 @@ void Scheduler::Fiber::yield() {
   worker->yield(this, nullptr);
 }
 
-void Scheduler::Fiber::yield_until(
+void Scheduler::Fiber::yield_until_sc(
     const std::chrono::system_clock::time_point& timeout) {
   MARL_SCOPED_EVENT("YIELD_UNTIL");
   worker->yield(this, &timeout);

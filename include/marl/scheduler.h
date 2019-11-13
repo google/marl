@@ -107,7 +107,9 @@ class Scheduler {
     // work on other tasks. yield_until() may automatically resume sometime
     // after timeout.
     // yield_until() must only be called on the currently executing fiber.
-    void yield_until(const std::chrono::system_clock::time_point& timeout);
+    template <typename Clock, typename Duration>
+    inline void yield_until(
+        const std::chrono::time_point<Clock, Duration>& timeout);
 
     // schedule() reschedules the suspended Fiber for execution.
     void schedule();
@@ -120,6 +122,8 @@ class Scheduler {
     friend class Scheduler;
 
     Fiber(Allocator::unique_ptr<OSFiber>&&, uint32_t id);
+
+    void yield_until_sc(const std::chrono::system_clock::time_point& timeout);
 
     // switchTo() switches execution to the given fiber.
     // switchTo() must only be called on the currently executing fiber.
@@ -329,6 +333,15 @@ class Scheduler {
   std::unordered_map<std::thread::id, Allocator::unique_ptr<Worker>>
       singleThreadedWorkers;
 };
+
+template <typename Clock, typename Duration>
+void Scheduler::Fiber::yield_until(
+    const std::chrono::time_point<Clock, Duration>& timeout) {
+  using TP = std::chrono::system_clock::time_point;
+  using ToDuration = typename TP::duration;
+  using ToClock = typename TP::clock;
+  yield_until_sc(std::chrono::time_point_cast<ToDuration, ToClock>(timeout));
+}
 
 Scheduler::Worker* Scheduler::Worker::getCurrent() {
   return Worker::current;
