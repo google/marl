@@ -103,7 +103,7 @@ class Event {
  private:
   struct Shared {
     inline Shared(Mode mode, bool initialState);
-    void signal();
+    inline void signal();
     inline void wait();
 
     template <typename Rep, typename Period>
