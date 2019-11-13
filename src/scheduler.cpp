@@ -216,7 +216,13 @@ void Scheduler::Fiber::schedule() {
 
 void Scheduler::Fiber::yield() {
   MARL_SCOPED_EVENT("YIELD");
-  worker->yield(this);
+  worker->yield(this, nullptr);
+}
+
+void Scheduler::Fiber::yield_until(
+    const std::chrono::system_clock::time_point& timeout) {
+  MARL_SCOPED_EVENT("YIELD_UNTIL");
+  worker->yield(this, &timeout);
 }
 
 void Scheduler::Fiber::switchTo(Fiber* to) {
@@ -296,15 +302,20 @@ void Scheduler::Worker::stop() {
   }
 }
 
-void Scheduler::Worker::yield(Fiber* from) {
-  (void)from;  // unreferenced parameter
+void Scheduler::Worker::yield(
+    Fiber* from,
+    const std::chrono::system_clock::time_point* timeout) {
   MARL_ASSERT(currentFiber == from,
               "Attempting to call yield from a non-current fiber");
 
   // Current fiber is yielding as it is blocked.
 
-  // First wait until there's something else this worker can do.
   std::unique_lock<std::mutex> lock(work.mutex);
+  if (timeout != nullptr) {
+    work.waiting.emplace(*timeout, from);
+  }
+
+  // First wait until there's something else this worker can do.
   waitForWork(lock);
 
   if (work.fibers.size() > 0) {
@@ -385,7 +396,9 @@ void Scheduler::Worker::run() {
                        Fiber::current()->id);
       {
         std::unique_lock<std::mutex> lock(work.mutex);
-        work.added.wait(lock, [this] { return work.num > 0 || shutdown; });
+        work.added.wait(lock, [this] {
+          return work.num > 0 || work.waiting.size() > 0 || shutdown;
+        });
         while (!shutdown || work.num > 0 || numBlockedFibers() > 0U) {
           waitForWork(lock);
           runUntilIdle(lock);
@@ -418,9 +431,31 @@ _Requires_lock_held_(lock) void Scheduler::Worker::waitForWork(
     spinForWork();
     lock.lock();
   }
-  work.added.wait(lock, [this] {
-    return work.num > 0 || (shutdown && numBlockedFibers() == 0U);
-  });
+
+  if (work.waiting.size() > 0) {
+    auto waiting = *work.waiting.begin();
+    work.added.wait_until(lock, waiting.first, [this] {
+      return work.num > 0 || (shutdown && numBlockedFibers() == 0U);
+    });
+    enqueueFiberTimeouts();
+  } else {
+    work.added.wait(lock, [this] {
+      return work.num > 0 || (shutdown && numBlockedFibers() == 0U);
+    });
+  }
+}
+
+_Requires_lock_held_(lock) void Scheduler::Worker::enqueueFiberTimeouts() {
+  auto now = std::chrono::system_clock::now();
+  while (work.waiting.size() > 0) {
+    auto it = work.waiting.begin();
+    if (it->first > now) {
+      break;
+    }
+    work.fibers.push(it->second);
+    work.waiting.erase(it);
+    work.num++;
+  }
 }
 
 void Scheduler::Worker::spinForWork() {
