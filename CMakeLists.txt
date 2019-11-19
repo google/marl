@@ -199,7 +199,7 @@ if(MARL_BUILD_TESTS)
 
     marl_set_target_options(marl-unittests)
 
-    target_link_libraries(marl-unittests marl "${MARL_OS_LIBS}")
+    target_link_libraries(marl-unittests marl)
 endif(MARL_BUILD_TESTS)
 
 # examples
@@ -210,7 +210,7 @@ if(MARL_BUILD_EXAMPLES)
             FOLDER "Examples"
         )
         marl_set_target_options(${target})
-        target_link_libraries(${target} marl "${MARL_OS_LIBS}")
+        target_link_libraries(${target} marl)
     endfunction(build_example)
 
     build_example(fractal)
