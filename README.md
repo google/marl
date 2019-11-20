@@ -61,6 +61,15 @@ You will also want to add the `marl` public headers to your project's include se
 target_include_directories($<target> PRIVATE "${MARL_DIR}/include") # replace <target> with the name of your project's target
 ```
 
+You may also wish to specify your own paths to the third party libraries used by `marl`.
+You can do this by setting any of the following variables before the call to `add_subdirectory()`:
+
+```cmake
+set(MARL_THIRD_PARTY_DIR <third-party-root-directory>) # defaults to ${MARL_DIR}/third_party
+set(MARL_GOOGLETEST_DIR  <path-to-googletest>)         # defaults to ${MARL_THIRD_PARTY_DIR}/googletest
+add_subdirectory(${MARL_DIR})
+```
+
 ---
 
 Note: This is not an officially supported Google product

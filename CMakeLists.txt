@@ -21,27 +21,39 @@ project(Marl C CXX ASM)
 ###########################################################
 # Options
 ###########################################################
-option(MARL_WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
-option(MARL_BUILD_EXAMPLES "Build example applications" OFF)
-option(MARL_BUILD_TESTS "Build tests" OFF)
-option(MARL_ASAN "Build marl with address sanitizer" OFF)
-option(MARL_MSAN "Build marl with memory sanitizer" OFF)
-option(MARL_TSAN "Build marl with thread sanitizer" OFF)
-option(MARL_INSTALL "Create marl install target" OFF)
+function (option_if_not_defined name description default)
+    if(NOT DEFINED ${name})
+        option(${name} ${description} ${default})
+    endif()
+endfunction()
+
+option_if_not_defined(MARL_WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
+option_if_not_defined(MARL_BUILD_EXAMPLES "Build example applications" OFF)
+option_if_not_defined(MARL_BUILD_TESTS "Build tests" OFF)
+option_if_not_defined(MARL_ASAN "Build marl with address sanitizer" OFF)
+option_if_not_defined(MARL_MSAN "Build marl with memory sanitizer" OFF)
+option_if_not_defined(MARL_TSAN "Build marl with thread sanitizer" OFF)
+option_if_not_defined(MARL_INSTALL "Create marl install target" OFF)
 
 ###########################################################
 # Directories
 ###########################################################
+function (set_if_not_defined name value)
+    if(NOT DEFINED ${name})
+        set(${name} ${value} PARENT_SCOPE)
+    endif()
+endfunction()
+
 set(MARL_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(MARL_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
-set(GOOGLETEST_DIR ${THIRD_PARTY_DIR}/googletest)
+set_if_not_defined(MARL_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
+set_if_not_defined(MARL_GOOGLETEST_DIR ${MARL_THIRD_PARTY_DIR}/googletest)
 
 ###########################################################
 # Submodules
 ###########################################################
 if(MARL_BUILD_TESTS)
-    if(NOT EXISTS ${THIRD_PARTY_DIR}/googletest/.git)
+    if(NOT EXISTS ${MARL_THIRD_PARTY_DIR}/googletest/.git)
         message(WARNING "third_party/googletest submodule missing.")
         message(WARNING "Run: `git submodule update --init` to build tests.")
         set(MARL_BUILD_TESTS OFF)
@@ -87,7 +99,6 @@ endif()
 ###########################################################
 # Functions
 ###########################################################
-
 function(marl_set_target_options target)
     # Enable all warnings
     if(MSVC)
@@ -181,13 +192,13 @@ if(MARL_BUILD_TESTS)
         ${MARL_SRC_DIR}/scheduler_test.cpp
         ${MARL_SRC_DIR}/ticket_test.cpp
         ${MARL_SRC_DIR}/waitgroup_test.cpp
-        ${GOOGLETEST_DIR}/googletest/src/gtest-all.cc
+        ${MARL_GOOGLETEST_DIR}/googletest/src/gtest-all.cc
     )
 
     set(MARL_TEST_INCLUDE_DIR
-        ${GOOGLETEST_DIR}/googletest/include/
-        ${GOOGLETEST_DIR}/googlemock/include/
-        ${GOOGLETEST_DIR}/googletest/
+        ${MARL_GOOGLETEST_DIR}/googletest/include/
+        ${MARL_GOOGLETEST_DIR}/googlemock/include/
+        ${MARL_GOOGLETEST_DIR}/googletest/
     )
 
     add_executable(marl-unittests ${MARL_TEST_LIST})
@@ -215,5 +226,4 @@ if(MARL_BUILD_EXAMPLES)
 
     build_example(fractal)
     build_example(primes)
-
 endif(MARL_BUILD_EXAMPLES)
