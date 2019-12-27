@@ -1,0 +1,9 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(Threads)
+
+if(NOT TARGET marl::marl)
+    include(${CMAKE_CURRENT_LIST_DIR}/marl-targets.cmake)
+endif()
