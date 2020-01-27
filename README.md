@@ -55,12 +55,6 @@ This will define the `marl` library target, which you can pass to `target_link_l
 target_link_libraries(<target> marl) # replace <target> with the name of your project's target
 ```
 
-You will also want to add the `marl` public headers to your project's include search paths so you can `#include` the marl headers:
-
-```cmake
-target_include_directories($<target> PRIVATE "${MARL_DIR}/include") # replace <target> with the name of your project's target
-```
-
 You may also wish to specify your own paths to the third party libraries used by `marl`.
 You can do this by setting any of the following variables before the call to `add_subdirectory()`:
 
