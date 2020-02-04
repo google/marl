@@ -1,0 +1,366 @@
+<!doctype html>
+<!--
+ Copyright 2020 The Marl Authors.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<html>
+
+<head>
+    <title>Marl performance charts</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
+    <style>
+        .canvas_container {
+            margin: 40px;
+        }
+
+        .description {
+            font-size: small;
+            font-family: sans-serif;
+            text-align: center;
+            color: #505050;
+        }
+
+        .link {
+            font-size: smaller;
+            color: #505050;
+        }
+
+        hr {
+            border-color: #00000010;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root_container">
+    </div>
+
+    <script>
+        let benchmarkBaseURL = "https://raw.githubusercontent.com/ben-clayton/marl/benchmark-results/benchmark-results/";
+        let colors = [
+            {
+                fillColor: "rgba(151,187,205,0.2)",
+                strokeColor: "rgba(151,187,205,1)",
+                pointColor: "rgba(151,187,205,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(151,187,205,0.8)"
+            },
+            {
+                fillColor: "rgba(247,70,74,0.2)",
+                strokeColor: "rgba(247,70,74,1)",
+                pointColor: "rgba(247,70,74,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(247,70,74,0.8)"
+            },
+            {
+                fillColor: "rgba(70,191,189,0.2)",
+                strokeColor: "rgba(70,191,189,1)",
+                pointColor: "rgba(70,191,189,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(70,191,189,0.8)"
+            },
+            {
+                fillColor: "rgba(253,180,92,0.2)",
+                strokeColor: "rgba(253,180,92,1)",
+                pointColor: "rgba(253,180,92,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(253,180,92,0.8)"
+            },
+            {
+                fillColor: "rgba(220,220,220,0.2)",
+                strokeColor: "rgba(220,220,220,1)",
+                pointColor: "rgba(220,220,220,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(220,220,220,0.8)"
+            },
+            {
+                fillColor: "rgba(148,159,177,0.2)",
+                strokeColor: "rgba(148,159,177,1)",
+                pointColor: "rgba(148,159,177,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(148,159,177,0.8)"
+            },
+            {
+                fillColor: "rgba(77,83,96,0.2)",
+                strokeColor: "rgba(77,83,96,1)",
+                pointColor: "rgba(77,83,96,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(77,83,96,1)"
+            }
+        ];
+
+        let formatTasksPerSecond = function (tps) {
+            let digits = Math.log10(tps);
+            if (digits >= 6) {
+                return (Math.round(tps / 10000) / 100) + "M";
+            }
+            if (digits >= 3) {
+                return (Math.round(tps / 10) / 100) + "K";
+            }
+            return tps;
+        };
+
+        let formatNanoseconds = function (tps) {
+            let digits = Math.log10(tps);
+            if (digits >= 6) {
+                return (Math.round(tps / 10000) / 100) + "ms";
+            }
+            if (digits >= 3) {
+                return (Math.round(tps / 10) / 100) + "μs";
+            }
+            return (Math.round(tps * 10) / 10) + "ns";
+        };
+
+        let groupBenchmarks = function (benchmarks) {
+            let results = {};
+            benchmarks.find(entry => {
+                let full_name = entry.name;
+                let name_var_match = full_name.match(/^([\w\/]*(?![\w]*:))\/?(.*)$/);
+                let name = name_var_match[1];
+                let vars = name_var_match[2];
+                let samples = {};
+
+                let vars_matches = vars.matchAll(/([\w]+):([0-9]+)/g);
+                for (let var_match of vars_matches) {
+                    let var_name = var_match[1];
+                    let var_val = parseInt(var_match[2]);
+                    samples[var_name] = var_val;
+                }
+
+                samples.value = entry.real_time;
+
+                results[name] = results[name] || [];
+                results[name].push(samples);
+            });
+            return results;
+        };
+
+        let createPerThreadChart = function (ctx, numTasks, name, benchmarks) {
+            let benchmarkData = function (benchmark, numTasks) {
+                let out = [];
+                for (let sample of benchmark) {
+                    if (numTasks == 1 || sample.tasks == numTasks) {
+                        let threads = sample.threads != undefined ? sample.threads : 1;
+                        let tasks = sample.tasks != undefined ? sample.tasks : 1;
+                        out.push({ x: threads, y: tasks / (sample.value / 1e9) });
+                    }
+                }
+                return out;
+            };
+
+            let datasets = benchmarks.map((benchmark, index) => {
+                if (!benchmark[name]) { return null; }
+                return {
+                    label: fileNames[index],
+                    data: benchmarkData(benchmark[name], numTasks),
+                    backgroundColor: colors[index].fillColor,
+                    borderColor: colors[index].strokeColor,
+                    fill: false,
+                };
+            }).filter(benchmark => benchmark != null);
+
+            let myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: datasets,
+                },
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: name + " (Tasks: " + numTasks + ")",
+                    },
+                    scales: {
+                        xAxes: [{
+                            type: 'linear',
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Worker Threads'
+                            },
+                        }],
+                        yAxes: [{
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Tasks per second'
+                            },
+                            ticks: {
+                                callback: function (value, index, values) {
+                                    return formatTasksPerSecond(value);
+                                }
+                            }
+                        }],
+                    },
+                    tooltips: {
+                        callbacks: {
+                            title: function (tooltipItem, data) {
+                                if (tooltipItem[0].label == 0) {
+                                    return "Single Threaded"
+                                }
+                                return tooltipItem[0].label + " worker threads";
+                            },
+                            label: function (tooltipItem, data) {
+                                var label = data.datasets[tooltipItem.datasetIndex].label || '';
+
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += formatTasksPerSecond(tooltipItem.yLabel);
+                                return label;
+                            }
+                        }
+                    },
+                },
+            });
+        }
+
+        let createScalarChart = function (ctx, name, benchmarks) {
+            let datasets = benchmarks.map((b, i) => {
+                return {
+                    label: fileNames[i],
+                    data: b[name].map(sample => sample.value),
+                    backgroundColor: colors[i].fillColor,
+                    borderColor: colors[i].strokeColor,
+                };
+            });
+
+            let myChart = new Chart(ctx, {
+                type: 'bar',
+                data: { datasets: datasets, },
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: name,
+                    },
+                    scales: {
+                        xAxes: [{
+                            display: false,
+                        }],
+                        yAxes: [{
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Time taken'
+                            },
+                            ticks: {
+                                callback: function (value, index, values) {
+                                    return formatNanoseconds(value);
+                                }
+                            }
+                        }],
+                    },
+                    tooltips: {
+                        callbacks: {
+                            title: function (tooltipItem, data) { return ""; },
+                            label: function (tooltipItem, data) {
+                                var label = data.datasets[tooltipItem.datasetIndex].label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += formatNanoseconds(tooltipItem.yLabel);
+                                return label;
+                            }
+                        }
+                    },
+                },
+            });
+        }
+
+        let rootContainer = document.getElementById("root_container");
+
+        let fileNames = [
+            "macbookpro-15in-2018",
+            "ubuntu-i7-4930K",
+            "win10-i7-4930K",
+        ];
+
+        fetch("metadata.json").then(response => response.json()).then(metadata => {
+            let fetches = []
+            for (let fileName of fileNames) {
+                fetches.push(fetch(benchmarkBaseURL + fileName + ".json").then(response => response.json()))
+            }
+
+            Promise.all(fetches).then((jsons) => {
+                let labels = ["win10", "ubuntu"];
+                let benchmarks = Object.values(jsons.map(o => o.benchmarks)).map(o => groupBenchmarks(o));
+                let benchmarkNames = Object.keys(benchmarks[0]);
+
+                benchmarkNames.sort((a, b) => (metadata[a].order || 0) - (metadata[b].order || 0));
+
+                for (let name of benchmarkNames) {
+                    let canvas = document.createElement('canvas');
+                    let ctx = canvas.getContext('2d');
+
+                    let container = document.createElement("div");
+                    container.className = "canvas_container";
+                    container.appendChild(canvas);
+
+                    if (metadata[name].description) {
+                        let description = document.createElement("p");
+                        description.innerHTML = metadata[name].description;
+                        description.className = "description";
+                        container.appendChild(description);
+                    }
+                    if (metadata[name].link) {
+                        let link = document.createElement("a");
+                        link.href = metadata[name].link;;
+                        link.innerHTML = "[source]";
+                        link.className = "link";
+
+                        let p = document.createElement("p");
+                        p.className = "description";
+                        p.appendChild(link);
+                        container.appendChild(p);
+                    }
+
+                    rootContainer.appendChild(container);
+
+                    rootContainer.appendChild(document.createElement("hr"));
+
+                    let numTasks = 1;
+                    let hasThreads = false;
+                    for (let benchmark of benchmarks) {
+                        if (benchmark[name] == undefined) { continue; }
+                        for (let sample of benchmark[name]) {
+                            if (numTasks < sample.tasks) {
+                                numTasks = sample.tasks;
+                            }
+                            if (sample.threads) {
+                                hasThreads = true;
+                            }
+                        }
+                    }
+
+                    if (hasThreads) {
+                        createPerThreadChart(ctx, numTasks, name, benchmarks);
+                    } else {
+                        createScalarChart(ctx, name, benchmarks);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
