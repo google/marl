@@ -231,10 +231,13 @@ class Scheduler {
     // tryLock() attempts to lock the worker for task enqueing.
     // If the lock was successful then true is returned, and the caller must
     // call enqueueAndUnlock().
+    _When_(return == true, _Acquires_lock_(work.mutex))
     bool tryLock();
 
     // enqueueAndUnlock() enqueues the task and unlocks the worker.
     // Must only be called after a call to tryLock() which returned true.
+    _Requires_lock_held_(work.mutex)
+    _Releases_lock_(work.mutex)
     void enqueueAndUnlock(Task&& task);
 
     // flush() processes all pending tasks before returning.
@@ -271,13 +274,13 @@ class Scheduler {
     void switchToFiber(Fiber*);
 
     // runUntilIdle() executes all pending tasks and then returns.
-    _Requires_lock_held_(lock) void runUntilIdle(
-        std::unique_lock<std::mutex>& lock);
+    _Requires_lock_held_(work.mutex)
+    void runUntilIdle();
 
     // waitForWork() blocks until new work is available, potentially calling
     // spinForWork().
-    _Requires_lock_held_(lock) void waitForWork(
-        std::unique_lock<std::mutex>& lock);
+    _Requires_lock_held_(work.mutex)
+    void waitForWork();
 
     // spinForWork() attempts to steal work from another Worker, and keeps
     // the thread awake for a short duration. This reduces overheads of
@@ -286,20 +289,21 @@ class Scheduler {
 
     // enqueueFiberTimeouts() enqueues all the fibers that have finished
     // waiting.
-    _Requires_lock_held_(lock) void enqueueFiberTimeouts();
+    _Requires_lock_held_(work.mutex)
+    void enqueueFiberTimeouts();
 
     // numBlockedFibers() returns the number of fibers currently blocked and
     // held externally.
-    _Requires_lock_held_(lock) inline size_t numBlockedFibers() const {
+    inline size_t numBlockedFibers() const {
       return workerFibers.size() - idleFibers.size();
     }
 
     // Work holds tasks and fibers that are enqueued on the Worker.
     struct Work {
       std::atomic<uint64_t> num = {0};  // tasks.size() + fibers.size()
-      TaskQueue tasks;                  // guarded by mutex
-      FiberQueue fibers;                // guarded by mutex
-      WaitingFibers waiting;            // guarded by mutex
+      _Guarded_by_(mutex) TaskQueue tasks;
+      _Guarded_by_(mutex) FiberQueue fibers;
+      _Guarded_by_(mutex) WaitingFibers waiting;
       std::condition_variable added;
       std::mutex mutex;
     };
