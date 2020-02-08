@@ -91,9 +91,11 @@ if(NOT MSVC)
         ${MARL_SRC_DIR}/osfiber_arm.c
         ${MARL_SRC_DIR}/osfiber_asm_aarch64.S
         ${MARL_SRC_DIR}/osfiber_asm_arm.S
+        ${MARL_SRC_DIR}/osfiber_asm_mips64.S
         ${MARL_SRC_DIR}/osfiber_asm_ppc64.S
         ${MARL_SRC_DIR}/osfiber_asm_x64.S
         ${MARL_SRC_DIR}/osfiber_asm_x86.S
+        ${MARL_SRC_DIR}/osfiber_mips64.c
         ${MARL_SRC_DIR}/osfiber_ppc64.c
         ${MARL_SRC_DIR}/osfiber_x64.c
         ${MARL_SRC_DIR}/osfiber_x86.c
