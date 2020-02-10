@@ -133,12 +133,17 @@ Scheduler::Scheduler(Allocator* allocator /* = Allocator::Default */)
 }
 
 Scheduler::~Scheduler() {
+#if MARL_DEBUG_ENABLED
   {
     std::unique_lock<std::mutex> lock(singleThreadedWorkerMutex);
     MARL_ASSERT(singleThreadedWorkers.size() == 0,
                 "Scheduler still bound on %d threads",
                 int(singleThreadedWorkers.size()));
   }
+#endif  // MARL_DEBUG_ENABLED
+
+  // Release all worker threads.
+  // This will wait for all in-flight tasks to complete before returning.
   setWorkerThreadCount(0);
 }
 
