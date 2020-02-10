@@ -201,6 +201,11 @@ class Scheduler {
   };
 
  private:
+  Scheduler(const Scheduler&) = delete;
+  Scheduler(Scheduler&&) = delete;
+  Scheduler& operator=(const Scheduler&) = delete;
+  Scheduler& operator=(Scheduler&&) = delete;
+
   // Stack size in bytes of a new fiber.
   // TODO: Make configurable so the default size can be reduced.
   static constexpr size_t FiberStackSize = 1024 * 1024;
