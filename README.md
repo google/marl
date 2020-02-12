@@ -117,6 +117,10 @@ set(MARL_GOOGLETEST_DIR  <path-to-googletest>)         # defaults to ${MARL_THIR
 add_subdirectory(${MARL_DIR})
 ```
 
+## Benchmarks
+
+Graphs of several microbenchmarks can be found [here](https://google.github.io/marl/benchmarks).
+
 ---
 
 Note: This is not an officially supported Google product
