@@ -1,40 +1,47 @@
 {
-    "BlockingCall": {
-        "description": "Time taken to perform a call to <code>marl::blocking_call()</code>.<br/>Requires creating a <code>std::thread</code>, and calling <code>join()</code> on it.",
-        "link": "https://github.com/google/marl/blob/master/src/blockingcall_bench.cpp"
-    },
-    "Defer": {
-        "description": "Time taken to perform a call to <code>marl::defer()</code>.",
-        "link": "https://github.com/google/marl/blob/master/src/defer_bench.cpp"
-    },
-    "Schedule/Event": {
-        "description": "Execution performance of a chain of tasks each blocked by an event that's signalled by the previous task.",
-        "link": "https://github.com/google/marl/blob/master/src/event_bench.cpp"
+    "Schedule/SomeWork": {
+        "description": "Execution performance of calling <code>marl::schedule()</code> with a reasonable work load.",
+        "link": "https://github.com/google/marl/blob/master/src/scheduler_bench.cpp",
+        "order": 0
     },
     "Schedule/Empty": {
         "description": "Execution performance of calling <code>marl::schedule()</code> with an empty function.",
-        "link": "https://github.com/google/marl/blob/master/src/scheduler_bench.cpp"
+        "link": "https://github.com/google/marl/blob/master/src/scheduler_bench.cpp",
+        "order": 1
     },
-    "Schedule/SomeWork": {
-        "description": "Execution performance of calling <code>marl::schedule()</code> with a reasonable work load.",
-        "link": "https://github.com/google/marl/blob/master/src/scheduler_bench.cpp"
+    "BlockingCall": {
+        "description": "Time taken to perform a call to <code>marl::blocking_call()</code>.<br/>Requires creating a <code>std::thread</code>, and calling <code>join()</code> on it.",
+        "link": "https://github.com/google/marl/blob/master/src/blockingcall_bench.cpp",
+        "order": 5
+    },
+    "Defer": {
+        "description": "Time taken to perform a call to <code>marl::defer()</code>.",
+        "link": "https://github.com/google/marl/blob/master/src/defer_bench.cpp",
+        "order": 5
+    },
+    "Schedule/Event": {
+        "description": "Execution performance of a chain of tasks each blocked by an event that's signalled by the previous task.",
+        "link": "https://github.com/google/marl/blob/master/src/event_bench.cpp",
+        "order": 5
     },
     "Schedule/Ticket": {
         "description": "Execution performance of a chain of tasks each blocked by ticket from a <code>marl::Ticket::Queue</code>.",
-        "link": "https://github.com/google/marl/blob/master/src/ticket_bench.cpp"
+        "link": "https://github.com/google/marl/blob/master/src/ticket_bench.cpp",
+        "order": 5
     },
     "Schedule/WaitGroup": {
         "description": "Execution performance of calling <code>marl::WaitGroup::done()</code> on a number of tasks, and waiting for all to complete with <code>marl::WaitGroup::wait()</code>.",
-        "link": "https://github.com/google/marl/blob/master/src/waitgroup_bench.cpp"
+        "link": "https://github.com/google/marl/blob/master/src/waitgroup_bench.cpp",
+        "order": 5
     },
     "SingleQueueTaskExecutor": {
         "description": "Reference benchmark that does not use marl.<br/>A simple multi-thread, single-queue task executor that shares a single mutex across N threads.<br/>This implementation suffers from lock contention.",
         "link": "https://github.com/google/marl/blob/master/src/non_marl_bench.cpp",
-        "order": 1
+        "order": 30
     },
     "MultiQueueTaskExecutor": {
         "description": "Reference benchmark that does not use marl.<br/>A simple multi-thread, multi-queue task executor that avoids lock contention.<br/>Tasks queues are evenly balanced, and each should take an equal amount of time to execute.",
         "link": "https://github.com/google/marl/blob/master/src/non_marl_bench.cpp",
-        "order": 1
+        "order": 30
     }
 }
