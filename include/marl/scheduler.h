@@ -124,6 +124,7 @@ class Scheduler {
     // will be locked before wait() returns.
     // pred will be always be called with the lock held.
     // wait() must only be called on the currently executing fiber.
+    _Requires_lock_held_(lock)
     void wait(Lock& lock, const Predicate& pred);
 
     // wait() suspends execution of this Fiber until the Fiber is woken up with
@@ -140,6 +141,7 @@ class Scheduler {
     // will be locked before wait() returns.
     // pred will be always be called with the lock held.
     // wait() must only be called on the currently executing fiber.
+    _Requires_lock_held_(lock)
     template <typename Clock, typename Duration>
     inline bool wait(Lock& lock,
                      const std::chrono::time_point<Clock, Duration>& timeout,
@@ -283,6 +285,7 @@ class Scheduler {
     // wait() suspends execution of the current task until the predicate pred
     // returns true.
     // See Fiber::wait() for more information.
+    _Requires_lock_held_(lock)
     bool wait(Fiber::Lock& lock,
               const TimePoint* timeout,
               const Predicate& pred);
@@ -448,6 +451,7 @@ class Scheduler {
       singleThreadedWorkers;
 };
 
+_Requires_lock_held_(lock)
 template <typename Clock, typename Duration>
 bool Scheduler::Fiber::wait(
     Lock& lock,
