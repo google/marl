@@ -67,9 +67,9 @@ const std::vector<ProcessorGroup>& getProcessorGroups() {
       if (info[i].Relationship == RelationGroup) {
         auto groupCount = info[i].Group.ActiveGroupCount;
         for (WORD groupIdx = 0; groupIdx < groupCount; groupIdx++) {
-          auto const& groupInfo = info[i].Group.GroupInfo;
-          out.emplace_back(ProcessorGroup{groupInfo->ActiveProcessorCount,
-                                          groupInfo->ActiveProcessorMask});
+          auto const& groupInfo = info[i].Group.GroupInfo[groupIdx];
+          out.emplace_back(ProcessorGroup{groupInfo.ActiveProcessorCount,
+                                          groupInfo.ActiveProcessorMask});
         }
       }
     }
