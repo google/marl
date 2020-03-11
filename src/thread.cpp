@@ -24,9 +24,7 @@
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
-#include <condition_variable>
 #include <cstdlib>  // mbstowcs
-#include <mutex>
 #include <vector>
 #elif defined(__APPLE__)
 #include <mach/thread_act.h>
@@ -112,23 +110,12 @@ class Thread::Impl {
  public:
   Impl(const Func& func) : func(func) {}
   static DWORD WINAPI run(void* self) {
-    reinterpret_cast<Impl*>(self)->run();
+    reinterpret_cast<Impl*>(self)->func();
     return 0;
   }
 
-  void run() {
-    func();
-    func = Func();
-    std::unique_lock<std::mutex> lock(mutex);
-    finished = true;
-    cv.notify_all();
-  }
-
   Func func;
-  std::mutex mutex;
   HANDLE handle;
-  std::condition_variable cv;  // guarded by mutex.
-  bool finished = false;       // guarded by mutex.
 };
 
 Thread::Thread(unsigned int logicalCpu, const Func& func) {
@@ -163,8 +150,7 @@ Thread::~Thread() {
 
 void Thread::join() {
   MARL_ASSERT(impl != nullptr, "join() called on unjoinable thread");
-  std::unique_lock<std::mutex> lock(impl->mutex);
-  impl->cv.wait(lock, [&] { return impl->finished; });
+  WaitForSingleObject(impl->handle, INFINITE);
 }
 
 void Thread::setName(const char* fmt, ...) {
