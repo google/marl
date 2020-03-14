@@ -18,6 +18,7 @@
 #include "debug.h"
 #include "memory.h"
 #include "sal.h"
+#include "task.h"
 #include "thread.h"
 
 #include <array>
@@ -36,9 +37,6 @@
 namespace marl {
 
 class OSFiber;
-
-// Task is a unit of work for the scheduler.
-using Task = std::function<void()>;
 
 // Scheduler asynchronously processes Tasks.
 // A scheduler can be bound to one or more threads using the bind() method.
@@ -318,9 +316,9 @@ class Scheduler {
     // flush() processes all pending tasks before returning.
     void flush();
 
-    // dequeue() attempts to take a Task from the worker. Returns true if
-    // a task was taken and assigned to out, otherwise false.
-    bool dequeue(Task& out);
+    // steal() attempts to steal a Task from the worker for another worker.
+    // Returns true if a task was taken and assigned to out, otherwise false.
+    bool steal(Task& out);
 
     // getCurrent() returns the Worker currently bound to the current
     // thread.
@@ -423,7 +421,7 @@ class Scheduler {
     std::vector<Allocator::unique_ptr<Fiber>>
         workerFibers;  // All fibers created by this worker.
     FastRnd rng;
-    std::atomic<bool> shutdown = {false};
+    bool shutdown = false;
   };
 
   // stealWork() attempts to steal a task from the worker with the given id.
@@ -477,6 +475,14 @@ Scheduler::Fiber* Scheduler::Worker::getCurrentFiber() const {
   return currentFiber;
 }
 
+// schedule() schedules the task T to be asynchronously called using the
+// currently bound scheduler.
+inline void schedule(Task&& t) {
+  MARL_ASSERT_HAS_BOUND_SCHEDULER("marl::schedule");
+  auto scheduler = Scheduler::get();
+  scheduler->enqueue(std::move(t));
+}
+
 // schedule() schedules the function f to be asynchronously called with the
 // given arguments using the currently bound scheduler.
 template <typename Function, typename... Args>
@@ -493,7 +499,7 @@ template <typename Function>
 inline void schedule(Function&& f) {
   MARL_ASSERT_HAS_BOUND_SCHEDULER("marl::schedule");
   auto scheduler = Scheduler::get();
-  scheduler->enqueue(std::forward<Function>(f));
+  scheduler->enqueue(Task(std::forward<Function>(f)));
 }
 
 }  // namespace marl
