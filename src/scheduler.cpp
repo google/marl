@@ -189,6 +189,10 @@ int Scheduler::getWorkerThreadCount() {
 }
 
 void Scheduler::enqueue(Task&& task) {
+  if (task.is(Task::Flags::SameThread)) {
+    Scheduler::Worker::getCurrent()->enqueue(std::move(task));
+    return;
+  }
   if (numWorkerThreads > 0) {
     while (true) {
       // Prioritize workers that have recently started spinning.
@@ -220,7 +224,7 @@ bool Scheduler::stealWork(Worker* thief, uint64_t from, Task& out) {
   if (numWorkerThreads > 0) {
     auto thread = workerThreads[from % numWorkerThreads];
     if (thread != thief) {
-      if (thread->dequeue(out)) {
+      if (thread->steal(out)) {
         return true;
       }
     }
@@ -392,8 +396,7 @@ void Scheduler::Worker::start() {
 void Scheduler::Worker::stop() {
   switch (mode) {
     case Mode::MultiThreaded:
-      shutdown = true;
-      enqueue([] {});  // Ensure the worker is woken up to notice the shutdown.
+      enqueue(Task([this] { shutdown = true; }, Task::Flags::SameThread));
       thread.join();
       break;
 
@@ -533,14 +536,15 @@ void Scheduler::Worker::enqueueAndUnlock(Task&& task) {
   }
 }
 
-bool Scheduler::Worker::dequeue(Task& out) {
+bool Scheduler::Worker::steal(Task& out) {
   if (work.num.load() == 0) {
     return false;
   }
   if (!work.mutex.try_lock()) {
     return false;
   }
-  if (work.tasks.size() == 0) {
+  if (work.tasks.size() == 0 ||
+      work.tasks.front().is(Task::Flags::SameThread)) {
     work.mutex.unlock();
     return false;
   }
