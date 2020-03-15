@@ -15,12 +15,12 @@
 #ifndef marl_containers_h
 #define marl_containers_h
 
+#include "debug.h"
+#include "memory.h"
+
 #include <algorithm>  // std::max
 #include <cstddef>    // size_t
 #include <utility>    // std::move
-
-#include "debug.h"
-#include "memory.h"
 
 namespace marl {
 namespace containers {
@@ -247,7 +247,7 @@ void vector<T, BASE_CAPACITY>::free() {
 ////////////////////////////////////////////////////////////////////////////////
 
 // list is a minimal std::list like container that supports constant time
-// insertion and removal of elements from anywhere in the container.
+// insertion and removal of elements.
 // list keeps hold of allocations (it only releases allocations on destruction),
 // to avoid repeated heap allocations and frees when frequently inserting and
 // removing elements.
@@ -281,11 +281,17 @@ class list {
   inline iterator end();
   inline size_t size() const;
 
-  template <typename U>
-  inline iterator emplace_front(U&&);
+  template <typename... Args>
+  iterator emplace_front(Args&&... args);
   inline void erase(iterator);
 
  private:
+  // copy / move is currently unsupported.
+  list(const list&) = delete;
+  list(list&&) = delete;
+  list& operator=(const list&) = delete;
+  list& operator=(list&&) = delete;
+
   void grow(size_t count);
 
   static void unlink(Entry* entry, Entry*& list);
@@ -360,8 +366,8 @@ size_t list<T>::size() const {
 }
 
 template <typename T>
-template <typename U>
-typename list<T>::iterator list<T>::emplace_front(U&& el) {
+template <typename... Args>
+typename list<T>::iterator list<T>::emplace_front(Args&&... args) {
   if (free == nullptr) {
     grow(capacity);
   }
@@ -371,7 +377,7 @@ typename list<T>::iterator list<T>::emplace_front(U&& el) {
   unlink(entry, free);
   link(entry, head);
 
-  new (&entry->data) T(std::forward<T>(el));
+  new (&entry->data) T(std::forward<T>(args)...);
   size_++;
 
   return entry;
