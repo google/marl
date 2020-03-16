@@ -503,7 +503,7 @@ void Scheduler::Worker::enqueue(Fiber* fiber) {
     case Fiber::State::Yielded:
       break;
   }
-  bool wasIdle = work.num == 0;
+  bool notify = work.notifyAdded;
   work.fibers.push(std::move(fiber));
   MARL_ASSERT(!work.waiting.contains(fiber),
               "fiber is unexpectedly in the waiting list");
@@ -511,7 +511,7 @@ void Scheduler::Worker::enqueue(Fiber* fiber) {
   work.num++;
   lock.unlock();
 
-  if (wasIdle) {
+  if (notify) {
     work.added.notify_one();
   }
 }
@@ -524,11 +524,11 @@ void Scheduler::Worker::enqueue(Task&& task) {
 _Requires_lock_held_(work.mutex)
 _Releases_lock_(work.mutex)
 void Scheduler::Worker::enqueueAndUnlock(Task&& task) {
-  auto wasIdle = work.num == 0;
+  auto notify = work.notifyAdded;
   work.tasks.push(std::move(task));
   work.num++;
   work.mutex.unlock();
-  if (wasIdle) {
+  if (notify) {
     work.added.notify_one();
   }
 }
@@ -564,8 +564,7 @@ void Scheduler::Worker::run() {
                        Fiber::current()->id);
       {
         std::unique_lock<std::mutex> lock(work.mutex);
-        work.added.wait(
-            lock, [this] { return work.num > 0 || work.waiting || shutdown; });
+        work.wait([this] { return work.num > 0 || work.waiting || shutdown; });
         while (!shutdown || work.num > 0 || numBlockedFibers() > 0U) {
           waitForWork();
           runUntilIdle();
@@ -600,19 +599,11 @@ void Scheduler::Worker::waitForWork() {
     work.mutex.lock();
   }
 
+  work.wait([this] {
+    return work.num > 0 || (shutdown && numBlockedFibers() == 0U);
+  });
   if (work.waiting) {
-    std::unique_lock<std::mutex> lock(work.mutex, std::adopt_lock);
-    work.added.wait_until(lock, work.waiting.next(), [this] {
-      return work.num > 0 || (shutdown && numBlockedFibers() == 0U);
-    });
-    lock.release();  // Keep the lock held.
     enqueueFiberTimeouts();
-  } else {
-    std::unique_lock<std::mutex> lock(work.mutex, std::adopt_lock);
-    work.added.wait(lock, [this] {
-      return work.num > 0 || (shutdown && numBlockedFibers() == 0U);
-    });
-    lock.release();  // Keep the lock held.
   }
 }
 
@@ -741,6 +732,23 @@ void Scheduler::Worker::switchToFiber(Fiber* to) {
   auto from = currentFiber;
   currentFiber = to;
   from->switchTo(to);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Scheduler::Worker::Work
+////////////////////////////////////////////////////////////////////////////////
+_Requires_lock_held_(mutex)
+template <typename F>
+void Scheduler::Worker::Work::wait(F&& f) {
+  std::unique_lock<std::mutex> lock(mutex, std::adopt_lock);
+  notifyAdded = true;
+  if (waiting) {
+    added.wait_until(lock, waiting.next(), f);
+  } else {
+    added.wait(lock, f);
+  }
+  notifyAdded = false;
+  lock.release();  // Keep the lock held.
 }
 
 }  // namespace marl
