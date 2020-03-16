@@ -36,3 +36,33 @@ BENCHMARK_DEFINE_F(Schedule, Event)(benchmark::State& state) {
   });
 }
 BENCHMARK_REGISTER_F(Schedule, Event)->Apply(Schedule::args<512>);
+
+// EventBaton benchmarks alternating execution of two tasks.
+BENCHMARK_DEFINE_F(Schedule, EventBaton)(benchmark::State& state) {
+  run(state, [&](int numPasses) {
+    for (auto _ : state) {
+      marl::Event passToA(marl::Event::Mode::Auto);
+      marl::Event passToB(marl::Event::Mode::Auto);
+      marl::Event done(marl::Event::Mode::Auto);
+
+      marl::schedule([=] {
+        for (int i = 0; i < numPasses; i++) {
+          passToA.wait();
+          passToB.signal();
+        }
+      });
+
+      marl::schedule([=] {
+        for (int i = 0; i < numPasses; i++) {
+          passToB.wait();
+          passToA.signal();
+        }
+        done.signal();
+      });
+
+      passToA.signal();
+      done.wait();
+    }
+  });
+}
+BENCHMARK_REGISTER_F(Schedule, EventBaton)->Apply(Schedule::args<1000000>);
