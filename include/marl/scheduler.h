@@ -387,8 +387,13 @@ class Scheduler {
       _Guarded_by_(mutex) TaskQueue tasks;
       _Guarded_by_(mutex) FiberQueue fibers;
       _Guarded_by_(mutex) WaitingFibers waiting;
+      _Guarded_by_(mutex) bool notifyAdded = true;
       std::condition_variable added;
       std::mutex mutex;
+
+      _Requires_lock_held_(mutex)
+      template <typename F>
+      inline void wait(F&&);
     };
 
     // https://en.wikipedia.org/wiki/Xorshift
