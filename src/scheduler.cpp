@@ -60,9 +60,9 @@ inline uint64_t threadID() {
 #endif
 
 template <typename T>
-inline T take(std::queue<T>& queue) {
+inline T take(std::deque<T>& queue) {
   auto out = std::move(queue.front());
-  queue.pop();
+  queue.pop_front();
   return out;
 }
 
@@ -507,7 +507,7 @@ void Scheduler::Worker::enqueue(Fiber* fiber) {
       break;
   }
   bool notify = work.notifyAdded;
-  work.fibers.push(std::move(fiber));
+  work.fibers.push_back(std::move(fiber));
   MARL_ASSERT(!work.waiting.contains(fiber),
               "fiber is unexpectedly in the waiting list");
   setFiberState(fiber, Fiber::State::Queued);
@@ -528,7 +528,7 @@ _Requires_lock_held_(work.mutex)
 _Releases_lock_(work.mutex)
 void Scheduler::Worker::enqueueAndUnlock(Task&& task) {
   auto notify = work.notifyAdded;
-  work.tasks.push(std::move(task));
+  work.tasks.push_back(std::move(task));
   work.num++;
   work.mutex.unlock();
   if (notify) {
@@ -617,7 +617,7 @@ void Scheduler::Worker::enqueueFiberTimeouts() {
   while (auto fiber = work.waiting.take(now)) {
     changeFiberState(fiber, Fiber::State::Waiting, Fiber::State::Queued);
     DBG_LOG("%d: TIMEOUT(%d)", (int)id, (int)fiber->id);
-    work.fibers.push(fiber);
+    work.fibers.push_back(fiber);
     work.num++;
   }
 }
@@ -662,7 +662,7 @@ void Scheduler::Worker::spinForWork() {
 
     if (scheduler->stealWork(this, rng(), stolen)) {
       std::unique_lock<std::mutex> lock(work.mutex);
-      work.tasks.emplace(std::move(stolen));
+      work.tasks.emplace_back(std::move(stolen));
       work.num++;
       return;
     }

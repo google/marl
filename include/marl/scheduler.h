@@ -25,14 +25,15 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <deque>
 #include <functional>
 #include <map>
 #include <mutex>
-#include <queue>
 #include <set>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 namespace marl {
 
@@ -255,8 +256,8 @@ class Scheduler {
 
   // TODO: Implement a queue that recycles elements to reduce number of
   // heap allocations.
-  using TaskQueue = std::queue<Task>;
-  using FiberQueue = std::queue<Fiber*>;
+  using TaskQueue = std::deque<Task>;
+  using FiberQueue = std::deque<Fiber*>;
   using FiberSet = std::unordered_set<Fiber*>;
 
   // Workers executes Tasks on a single thread.
