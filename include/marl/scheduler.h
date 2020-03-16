@@ -337,14 +337,17 @@ class Scheduler {
     // continue to process tasks until stop() is called.
     // If the worker was constructed in Mode::SingleThreaded, run() call
     // flush() and return.
+    _Requires_lock_held_(work.mutex)
     void run();
 
     // createWorkerFiber() creates a new fiber that when executed calls
     // run().
+    _Requires_lock_held_(work.mutex)
     Fiber* createWorkerFiber();
 
     // switchToFiber() switches execution to the given fiber. The fiber
     // must belong to this worker.
+    _Requires_lock_held_(work.mutex)
     void switchToFiber(Fiber*);
 
     // runUntilIdle() executes all pending tasks and then returns.
