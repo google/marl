@@ -596,7 +596,11 @@ _Requires_lock_held_(work.mutex)
 void Scheduler::Worker::waitForWork() {
   MARL_ASSERT(work.num == work.fibers.size() + work.tasks.size(),
               "work.num out of sync");
-  if (work.num == 0 && mode == Mode::MultiThreaded) {
+  if (work.num > 0) {
+    return;
+  }
+
+  if (mode == Mode::MultiThreaded) {
     scheduler->onBeginSpinning(id);
     work.mutex.unlock();
     spinForWork();
