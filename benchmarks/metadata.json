@@ -24,6 +24,11 @@
         "link": "https://github.com/google/marl/blob/master/src/event_bench.cpp",
         "order": 5
     },
+    "Schedule/EventBaton": {
+        "description": "Execution performance of two tasks, that frequently alternate execution.",
+        "link": "https://github.com/google/marl/blob/master/src/event_bench.cpp",
+        "order": 5
+    },
     "Schedule/Ticket": {
         "description": "Execution performance of a chain of tasks each blocked by ticket from a <code>marl::Ticket::Queue</code>.",
         "link": "https://github.com/google/marl/blob/master/src/ticket_bench.cpp",
