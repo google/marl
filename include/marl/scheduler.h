@@ -145,6 +145,39 @@ class Scheduler {
                      const std::chrono::time_point<Clock, Duration>& timeout,
                      const Predicate& pred);
 
+    // wait() suspends execution of this Fiber until the Fiber is woken up with
+    // a call to notify().
+    // While the Fiber is suspended, the scheduler thread may continue executing
+    // other tasks.
+    // wait() must only be called on the currently executing fiber.
+    //
+    // Warning: Unlike wait() overloads that take a lock and predicate, this
+    // form of wait() offers no safety for notify() signals that occur before
+    // the fiber is suspended, when signalling between different threads. In
+    // this scenario you may deadlock. For this reason, it is only ever
+    // recommended to use this overload if you can guarantee that the calls to
+    // wait() and notify() are made by the same thread.
+    //
+    // Use with extreme caution.
+    inline void wait();
+
+    // wait() suspends execution of this Fiber until the Fiber is woken up with
+    // a call to notify(), or sometime after the timeout is reached.
+    // While the Fiber is suspended, the scheduler thread may continue executing
+    // other tasks.
+    // wait() must only be called on the currently executing fiber.
+    //
+    // Warning: Unlike wait() overloads that take a lock and predicate, this
+    // form of wait() offers no safety for notify() signals that occur before
+    // the fiber is suspended, when signalling between different threads. For
+    // this reason, it is only ever recommended to use this overload if you can
+    // guarantee that the calls to wait() and notify() are made by the same
+    // thread.
+    //
+    // Use with extreme caution.
+    template <typename Clock, typename Duration>
+    inline bool wait(const std::chrono::time_point<Clock, Duration>& timeout);
+
     // notify() reschedules the suspended Fiber for execution.
     // notify() is usually only called when the predicate for one or more wait()
     // calls will likely return true.
@@ -281,12 +314,17 @@ class Scheduler {
     void stop();
 
     // wait() suspends execution of the current task until the predicate pred
-    // returns true.
+    // returns true or the optional timeout is reached.
     // See Fiber::wait() for more information.
     _Requires_lock_held_(lock)
     bool wait(Fiber::Lock& lock,
               const TimePoint* timeout,
               const Predicate& pred);
+
+    // wait() suspends execution of the current task until the fiber is
+    // notified, or the optional timeout is reached.
+    // See Fiber::wait() for more information.
+    bool wait(const TimePoint* timeout);
 
     // suspend() suspends the currenetly executing Fiber until the fiber is
     // woken with a call to enqueue(Fiber*), or automatically sometime after the
@@ -463,6 +501,19 @@ bool Scheduler::Fiber::wait(
   using ToClock = typename TimePoint::clock;
   auto tp = std::chrono::time_point_cast<ToDuration, ToClock>(timeout);
   return worker->wait(lock, &tp, pred);
+}
+
+void Scheduler::Fiber::wait() {
+  worker->wait(nullptr);
+}
+
+template <typename Clock, typename Duration>
+bool Scheduler::Fiber::wait(
+    const std::chrono::time_point<Clock, Duration>& timeout) {
+  using ToDuration = typename TimePoint::duration;
+  using ToClock = typename TimePoint::clock;
+  auto tp = std::chrono::time_point_cast<ToDuration, ToClock>(timeout);
+  return worker->wait(&tp);
 }
 
 Scheduler::Worker* Scheduler::Worker::getCurrent() {
