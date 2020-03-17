@@ -412,6 +412,15 @@ void Scheduler::Worker::stop() {
   }
 }
 
+bool Scheduler::Worker::wait(const TimePoint* timeout) {
+  DBG_LOG("%d: WAIT(%d)", (int)id, (int)currentFiber->id);
+  {
+    std::unique_lock<std::mutex> lock(work.mutex);
+    suspend(timeout);
+  }
+  return timeout == nullptr || std::chrono::system_clock::now() < *timeout;
+}
+
 _Requires_lock_held_(waitLock)
 bool Scheduler::Worker::wait(Fiber::Lock& waitLock,
                              const TimePoint* timeout,
