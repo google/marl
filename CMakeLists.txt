@@ -146,7 +146,7 @@ function(marl_set_target_options target)
         target_link_libraries(${target} "-fsanitize=thread")
     endif()
 
-    target_include_directories(${target} PUBLIC ${MARL_INCLUDE_DIR})
+    target_include_directories(${target} PUBLIC $<BUILD_INTERFACE:${MARL_INCLUDE_DIR}>)
 endfunction(marl_set_target_options)
 
 ###########################################################
