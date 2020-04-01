@@ -76,6 +76,29 @@ if(MARL_BUILD_BENCHMARKS)
 endif(MARL_BUILD_BENCHMARKS)
 
 ###########################################################
+# Compiler feature tests
+###########################################################
+# Check that the Clang Thread Safety Analysis' try_acquire_capability behaves
+# correctly. This is broken on some earlier versions of clang.
+# See: https://bugs.llvm.org/show_bug.cgi?id=32954
+set(SAVE_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+set(CMAKE_REQUIRED_FLAGS "-Wthread-safety -Werror")
+check_cxx_source_compiles(
+    "int main() {
+      struct __attribute__((capability(\"mutex\"))) Mutex {
+        void Unlock() __attribute__((release_capability)) {};
+        bool TryLock() __attribute__((try_acquire_capability(true))) { return true; };
+      };
+      Mutex m;
+      if (m.TryLock()) {
+        m.Unlock();  // Should not warn.
+      }
+      return 0;
+    }"
+    MARL_THREAD_SAFETY_ANALYSIS_SUPPORTED)
+set(CMAKE_REQUIRED_FLAGS ${SAVE_CMAKE_REQUIRED_FLAGS})
+
+###########################################################
 # File lists
 ###########################################################
 set(MARL_LIST
@@ -111,6 +134,10 @@ find_package(Threads REQUIRED)
 # Functions
 ###########################################################
 function(marl_set_target_options target)
+    if (MARL_THREAD_SAFETY_ANALYSIS_SUPPORTED)
+        target_compile_options(${target} PRIVATE "-Wthread-safety")
+    endif()
+
     # Enable all warnings
     if(MSVC)
         target_compile_options(${target} PRIVATE
