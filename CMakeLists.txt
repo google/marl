@@ -137,13 +137,13 @@ function(marl_set_target_options target)
 
     if(MARL_ASAN)
         target_compile_options(${target} PUBLIC "-fsanitize=address")
-        target_link_libraries(${target} "-fsanitize=address")
+        target_link_libraries(${target} PUBLIC "-fsanitize=address")
     elseif(MARL_MSAN)
         target_compile_options(${target} PUBLIC "-fsanitize=memory")
-        target_link_libraries(${target} "-fsanitize=memory")
+        target_link_libraries(${target} PUBLIC "-fsanitize=memory")
     elseif(MARL_TSAN)
         target_compile_options(${target} PUBLIC "-fsanitize=thread")
-        target_link_libraries(${target} "-fsanitize=thread")
+        target_link_libraries(${target} PUBLIC "-fsanitize=thread")
     endif()
 
     target_include_directories(${target} PUBLIC $<BUILD_INTERFACE:${MARL_INCLUDE_DIR}>)
@@ -232,7 +232,7 @@ if(MARL_BUILD_TESTS)
 
     marl_set_target_options(marl-unittests)
 
-    target_link_libraries(marl-unittests marl)
+    target_link_libraries(marl-unittests PRIVATE marl)
 endif(MARL_BUILD_TESTS)
 
 # benchmarks
@@ -252,7 +252,7 @@ if(MARL_BUILD_BENCHMARKS)
 
     marl_set_target_options(marl-benchmarks)
 
-    target_link_libraries(marl-benchmarks benchmark::benchmark marl)
+    target_link_libraries(marl-benchmarks PRIVATE benchmark::benchmark marl)
 endif(MARL_BUILD_BENCHMARKS)
 
 # examples
@@ -263,7 +263,7 @@ if(MARL_BUILD_EXAMPLES)
             FOLDER "Examples"
         )
         marl_set_target_options(${target})
-        target_link_libraries(${target} marl)
+        target_link_libraries(${target} PRIVATE marl)
     endfunction(build_example)
 
     build_example(fractal)
