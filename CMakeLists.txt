@@ -100,6 +100,9 @@ check_cxx_source_compiles(
     MARL_THREAD_SAFETY_ANALYSIS_SUPPORTED)
 set(CMAKE_REQUIRED_FLAGS ${SAVE_CMAKE_REQUIRED_FLAGS})
 
+# Export MARL_THREAD_SAFETY_ANALYSIS_SUPPORTED as this may be useful to parent projects
+set(MARL_THREAD_SAFETY_ANALYSIS_SUPPORTED PARENT_SCOPE ${MARL_THREAD_SAFETY_ANALYSIS_SUPPORTED})
+
 ###########################################################
 # File lists
 ###########################################################
