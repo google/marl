@@ -110,7 +110,7 @@ void Scheduler::bind() {
 
 void Scheduler::unbind() {
   MARL_ASSERT(bound != nullptr, "No scheduler bound");
-  auto worker = Scheduler::Worker::getCurrent();
+  auto worker = Worker::getCurrent();
   worker->stop();
   {
     marl::lock lock(bound->singleThreadedWorkers.mutex);
@@ -192,7 +192,7 @@ int Scheduler::getWorkerThreadCount() {
 
 void Scheduler::enqueue(Task&& task) {
   if (task.is(Task::Flags::SameThread)) {
-    Scheduler::Worker::getCurrent()->enqueue(std::move(task));
+    Worker::getCurrent()->enqueue(std::move(task));
     return;
   }
   if (numWorkerThreads > 0) {
@@ -213,9 +213,13 @@ void Scheduler::enqueue(Task&& task) {
       }
     }
   } else {
-    auto worker = Worker::getCurrent();
-    MARL_ASSERT(worker, "singleThreadedWorker not found");
-    worker->enqueue(std::move(task));
+    if (auto worker = Worker::getCurrent()) {
+      worker->enqueue(std::move(task));
+    } else {
+      MARL_FATAL(
+          "singleThreadedWorker not found. Did you forget to call "
+          "marl::Scheduler::bind()?");
+    }
   }
 }
 
@@ -240,12 +244,12 @@ void Scheduler::onBeginSpinning(int workerId) {
 // Fiber
 ////////////////////////////////////////////////////////////////////////////////
 Scheduler::Fiber::Fiber(Allocator::unique_ptr<OSFiber>&& impl, uint32_t id)
-    : id(id), impl(std::move(impl)), worker(Scheduler::Worker::getCurrent()) {
+    : id(id), impl(std::move(impl)), worker(Worker::getCurrent()) {
   MARL_ASSERT(worker != nullptr, "No Scheduler::Worker bound");
 }
 
 Scheduler::Fiber* Scheduler::Fiber::current() {
-  auto worker = Scheduler::Worker::getCurrent();
+  auto worker = Worker::getCurrent();
   return worker != nullptr ? worker->getCurrentFiber() : nullptr;
 }
 
