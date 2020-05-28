@@ -42,8 +42,7 @@ bool isPrime(int i) {
 int main() {
   // Create a marl scheduler using the full number of logical cpus.
   // Bind this scheduler to the main thread so we can call marl::schedule()
-  marl::Scheduler scheduler;
-  scheduler.setWorkerThreadCount(marl::Thread::numLogicalCPUs());
+  marl::Scheduler scheduler(marl::Scheduler::Config::allCores());
   scheduler.bind();
   defer(scheduler.unbind());  // unbind before destructing the scheduler.
 
