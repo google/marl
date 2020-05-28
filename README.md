@@ -23,11 +23,10 @@ Example:
 #include <cstdio>
 
 int main() {
-  // Create a marl scheduler using the 4 hardware threads.
+  // Create a marl scheduler using all the logical processors available to the process.
   // Bind this scheduler to the main thread so we can call marl::schedule()
-  marl::Scheduler scheduler;
+  marl::Scheduler scheduler(marl::Scheduler::Config::allCores());
   scheduler.bind();
-  scheduler.setWorkerThreadCount(4);
   defer(scheduler.unbind());  // Automatically unbind before returning.
 
   constexpr int numTasks = 10;
@@ -140,7 +139,7 @@ Internally, these primitives hold a shared pointer to the primitive state. By ca
 
 #### Create one instance of `marl::Scheduler`, use it for the lifetime of the process.
 
-`marl::Scheduler::setWorkerThreadCount()` is an expensive operation as it spawn a number of hardware threads. \
+The `marl::Scheduler` constructor can be expensive as it may spawn a number of hardware threads. \
 Destructing the `marl::Scheduler` requires waiting on all tasks to complete.
 
 Multiple `marl::Scheduler`s may fight each other for hardware thread utilization.
@@ -151,9 +150,8 @@ For example:
 
 ```c++
 int main() {
-  marl::Scheduler scheduler;
+  marl::Scheduler scheduler(marl::Scheduler::Config::allCores());
   scheduler.bind();
-  scheduler.setWorkerThreadCount(marl::Thread::numLogicalCPUs());
   defer(scheduler.unbind());
 
   return do_program_stuff();

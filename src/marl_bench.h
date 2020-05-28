@@ -28,8 +28,10 @@ class Schedule : public benchmark::Fixture {
   // F must be a function of the signature: void(int numTasks)
   template <typename F>
   void run(const ::benchmark::State& state, F&& f) {
-    marl::Scheduler scheduler;
-    scheduler.setWorkerThreadCount(numThreads(state));
+    marl::Scheduler::Config cfg;
+    cfg.setWorkerThreadCount(numThreads(state));
+
+    marl::Scheduler scheduler(cfg);
     scheduler.bind();
     f(numTasks(state));
     scheduler.unbind();
