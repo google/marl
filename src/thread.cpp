@@ -226,7 +226,7 @@ void Thread::setName(const char* fmt, ...) {
 }
 
 unsigned int Thread::numLogicalCPUs() {
-  return sysconf(_SC_NPROCESSORS_ONLN);
+  return static_cast<unsigned int>(sysconf(_SC_NPROCESSORS_ONLN));
 }
 
 #endif  // OS

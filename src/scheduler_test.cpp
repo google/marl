@@ -193,10 +193,10 @@ TEST_F(WithoutBoundScheduler, ScheduleMTWWithNoBind) {
 TEST_F(WithoutBoundScheduler, ScheduleSTWWithNoBind) {
   auto scheduler = std::unique_ptr<marl::Scheduler>(new marl::Scheduler());
 
-#if MARL_DEBUG_ENABLED
+#if MARL_DEBUG_ENABLED && GTEST_HAS_DEATH_TEST
   EXPECT_DEATH(scheduler->enqueue(marl::Task([] {})),
                "Did you forget to call marl::Scheduler::bind");
-#else
+#elif !MARL_DEBUG_ENABLED
   scheduler->enqueue(marl::Task([] { FAIL() << "Should not be called"; }));
 #endif
 }
