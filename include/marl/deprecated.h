@@ -24,11 +24,15 @@
 #endif  // MARL_ENABLE_DEPRECATED_SCHEDULER_GETTERS_SETTERS
 
 #ifndef MARL_WARN_DEPRECATED
-#define MARL_WARN_DEPRECATED 0
+#define MARL_WARN_DEPRECATED 1
 #endif  // MARL_WARN_DEPRECATED
 
 #if MARL_WARN_DEPRECATED
+#if defined(_WIN32)
+#define MARL_DEPRECATED(message) __declspec(deprecated(message))
+#else
 #define MARL_DEPRECATED(message) __attribute__((deprecated(message)))
+#endif
 #else
 #define MARL_DEPRECATED(message)
 #endif
