@@ -64,8 +64,6 @@ OSFiber::~OSFiber() {
 Allocator::unique_ptr<OSFiber> OSFiber::createFiberFromCurrentThread(
     Allocator* allocator) {
   auto out = allocator->make_unique<OSFiber>();
-  // Windows XP:  The FIBER_FLAG_FLOAT_SWITCH flag is not supported.
-  // ConvertThreadToFiber -->> ConvertThreadToFiberEx
   out->fiber = ConvertThreadToFiberEx(nullptr,FIBER_FLAG_FLOAT_SWITCH);
   out->isFiberFromThread = true;
   MARL_ASSERT(out->fiber != nullptr,
@@ -79,9 +77,7 @@ Allocator::unique_ptr<OSFiber> OSFiber::createFiber(
     size_t stackSize,
     const std::function<void()>& func) {
   auto out = allocator->make_unique<OSFiber>();
-  // Windows XP:  The FIBER_FLAG_FLOAT_SWITCH flag is not supported.
-  // CreateFiber -->> CreateFiberEx
-  // least stackSize 64KB
+  // stackSize is rounded up to the system's allocation granularity (typically 64 KB).
   out->fiber = CreateFiberEx(stackSize - 1,stackSize,FIBER_FLAG_FLOAT_SWITCH,&OSFiber::run, out.get());
   out->target = func;
   MARL_ASSERT(out->fiber != nullptr, "CreateFiberEx() failed with error 0x%x",
