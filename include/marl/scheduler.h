@@ -103,30 +103,30 @@ class Scheduler {
   const Config& config() const;
 
 #if MARL_ENABLE_DEPRECATED_SCHEDULER_GETTERS_SETTERS
-  MARL_DEPRECATED("use Scheduler::Scheduler(const Config&)")
+  MARL_DEPRECATED(139, "use Scheduler::Scheduler(const Config&)")
   Scheduler(Allocator* allocator = Allocator::Default);
 
   // setThreadInitializer() sets the worker thread initializer function which
   // will be called for each new worker thread spawned.
   // The initializer will only be called on newly created threads (call
   // setThreadInitializer() before setWorkerThreadCount()).
-  MARL_DEPRECATED("use Config::setWorkerThreadInitializer()")
+  MARL_DEPRECATED(139, "use Config::setWorkerThreadInitializer()")
   void setThreadInitializer(const std::function<void()>& init);
 
   // getThreadInitializer() returns the thread initializer function set by
   // setThreadInitializer().
-  MARL_DEPRECATED("use config().workerThread.initializer")
+  MARL_DEPRECATED(139, "use config().workerThread.initializer")
   std::function<void()> getThreadInitializer();
 
   // setWorkerThreadCount() adjusts the number of dedicated worker threads.
   // A count of 0 puts the scheduler into single-threaded mode.
   // Note: Currently the number of threads cannot be adjusted once tasks
   // have been enqueued. This restriction may be lifted at a later time.
-  MARL_DEPRECATED("use Config::setWorkerThreadCount()")
+  MARL_DEPRECATED(139, "use Config::setWorkerThreadCount()")
   void setWorkerThreadCount(int count);
 
   // getWorkerThreadCount() returns the number of worker threads.
-  MARL_DEPRECATED("use config().workerThread.count")
+  MARL_DEPRECATED(139, "use config().workerThread.count")
   int getWorkerThreadCount();
 #endif  // MARL_ENABLE_DEPRECATED_SCHEDULER_GETTERS_SETTERS
 
