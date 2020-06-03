@@ -29,12 +29,18 @@
 
 #if MARL_WARN_DEPRECATED
 #if defined(_WIN32)
-#define MARL_DEPRECATED(message) __declspec(deprecated(message))
+#define MARL_DEPRECATED(issue_num, message)                              \
+  __declspec(deprecated(                                                 \
+      message "\nSee: https://github.com/google/marl/issues/" #issue_num \
+              " for more information"))
 #else
-#define MARL_DEPRECATED(message) __attribute__((deprecated(message)))
+#define MARL_DEPRECATED(issue_num, message)                              \
+  __attribute__((deprecated(                                             \
+      message "\nSee: https://github.com/google/marl/issues/" #issue_num \
+              " for more information")))
 #endif
 #else
-#define MARL_DEPRECATED(message)
+#define MARL_DEPRECATED(issue_num, message)
 #endif
 
 #endif  // marl_deprecated_h
