@@ -254,6 +254,7 @@ if(MARL_BUILD_TESTS)
         ${MARL_SRC_DIR}/parallelize_test.cpp
         ${MARL_SRC_DIR}/pool_test.cpp
         ${MARL_SRC_DIR}/scheduler_test.cpp
+        ${MARL_SRC_DIR}/thread_test.cpp
         ${MARL_SRC_DIR}/ticket_test.cpp
         ${MARL_SRC_DIR}/waitgroup_test.cpp
         ${MARL_GOOGLETEST_DIR}/googletest/src/gtest-all.cc
