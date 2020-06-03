@@ -60,6 +60,7 @@ class Scheduler {
     struct WorkerThread {
       int count = 0;
       ThreadInitializer initializer;
+      std::shared_ptr<Thread::Affinity::Policy> affinityPolicy;
     };
     WorkerThread workerThread;
 
@@ -74,6 +75,8 @@ class Scheduler {
     inline Config& setAllocator(Allocator*);
     inline Config& setWorkerThreadCount(int);
     inline Config& setWorkerThreadInitializer(const ThreadInitializer&);
+    inline Config& setWorkerThreadAffinityPolicy(
+        const std::shared_ptr<Thread::Affinity::Policy>&);
   };
 
   // Constructor.
@@ -528,6 +531,12 @@ Scheduler::Config& Scheduler::Config::setWorkerThreadCount(int count) {
 Scheduler::Config& Scheduler::Config::setWorkerThreadInitializer(
     const ThreadInitializer& initializer) {
   workerThread.initializer = initializer;
+  return *this;
+}
+
+Scheduler::Config& Scheduler::Config::setWorkerThreadAffinityPolicy(
+    const std::shared_ptr<Thread::Affinity::Policy>& policy) {
+  workerThread.affinityPolicy = policy;
   return *this;
 }
 

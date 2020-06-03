@@ -128,6 +128,11 @@ void Scheduler::unbind() {
 }
 
 Scheduler::Scheduler(const Config& config) : cfg(config), workerThreads{} {
+  if (cfg.workerThread.count > 0 && !cfg.workerThread.affinityPolicy) {
+    cfg.workerThread.affinityPolicy = Thread::Affinity::Policy::anyOf(
+        Thread::Affinity::all(cfg.allocator), cfg.allocator);
+  }
+
   for (size_t i = 0; i < spinningWorkers.size(); i++) {
     spinningWorkers[i] = -1;
   }
@@ -403,8 +408,11 @@ Scheduler::Worker::Worker(Scheduler* scheduler, Mode mode, uint32_t id)
 
 void Scheduler::Worker::start() {
   switch (mode) {
-    case Mode::MultiThreaded:
-      thread = Thread(id, [=] {
+    case Mode::MultiThreaded: {
+      auto allocator = scheduler->cfg.allocator;
+      auto& affinityPolicy = scheduler->cfg.workerThread.affinityPolicy;
+      auto affinity = affinityPolicy->get(id, allocator);
+      thread = Thread(std::move(affinity), [=] {
         Thread::setName("Thread<%.2d>", int(id));
 
         if (auto const& initFunc = scheduler->cfg.workerThread.initializer) {
@@ -423,13 +431,13 @@ void Scheduler::Worker::start() {
         Worker::current = nullptr;
       });
       break;
-
-    case Mode::SingleThreaded:
+    }
+    case Mode::SingleThreaded: {
       Worker::current = this;
       mainFiber = Fiber::createFromCurrentThread(scheduler->cfg.allocator, 0);
       currentFiber = mainFiber.get();
       break;
-
+    }
     default:
       MARL_ASSERT(false, "Unknown mode: %d", int(mode));
   }
