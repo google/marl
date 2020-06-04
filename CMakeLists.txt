@@ -43,6 +43,7 @@ option_if_not_defined(MARL_ASAN "Build marl with address sanitizer" OFF)
 option_if_not_defined(MARL_MSAN "Build marl with memory sanitizer" OFF)
 option_if_not_defined(MARL_TSAN "Build marl with thread sanitizer" OFF)
 option_if_not_defined(MARL_INSTALL "Create marl install target" OFF)
+option_if_not_defined(MARL_FULL_BENCHMARK "Benchmark all cores and a range of tasks" OFF)
 
 ###########################################################
 # Directories
@@ -292,6 +293,10 @@ if(MARL_BUILD_BENCHMARKS)
     add_executable(marl-benchmarks ${MARL_BENCHMARK_LIST})
 
     marl_set_target_options(marl-benchmarks)
+
+    target_compile_definitions(marl-benchmarks PRIVATE
+        "MARL_FULL_BENCHMARK=${MARL_FULL_BENCHMARK}"
+    )
 
     target_link_libraries(marl-benchmarks PRIVATE benchmark::benchmark marl)
 endif(MARL_BUILD_BENCHMARKS)
