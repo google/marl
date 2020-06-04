@@ -49,6 +49,8 @@ class vector {
 
   inline ~vector();
 
+  inline vector& operator=(const vector&);
+
   template <int BASE_CAPACITY_2>
   inline vector<T, BASE_CAPACITY>& operator=(const vector<T, BASE_CAPACITY_2>&);
 
@@ -71,6 +73,8 @@ class vector {
 
  private:
   using TStorage = typename marl::aligned_storage<sizeof(T), alignof(T)>::type;
+
+  vector(const vector&) = delete;
 
   inline void free();
 
@@ -108,6 +112,18 @@ vector<T, BASE_CAPACITY>::vector(
 template <typename T, int BASE_CAPACITY>
 vector<T, BASE_CAPACITY>::~vector() {
   free();
+}
+
+template <typename T, int BASE_CAPACITY>
+vector<T, BASE_CAPACITY>& vector<T, BASE_CAPACITY>::operator=(
+    const vector& other) {
+  free();
+  reserve(other.size());
+  count = other.size();
+  for (size_t i = 0; i < count; i++) {
+    new (&reinterpret_cast<T*>(elements)[i]) T(other[i]);
+  }
+  return *this;
 }
 
 template <typename T, int BASE_CAPACITY>
@@ -238,6 +254,7 @@ void vector<T, BASE_CAPACITY>::free() {
 
   if (allocation.ptr != nullptr) {
     allocator->free(allocation);
+    allocation = {};
     elements = nullptr;
   }
 }
