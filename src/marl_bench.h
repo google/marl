@@ -23,18 +23,28 @@ class Schedule : public benchmark::Fixture {
 
   void TearDown(const ::benchmark::State&) {}
 
-  // run() creates a scheduler, sets the number of worker threads from the
-  // benchmark arguments, calls f, then unbinds and destructs the scheduler.
+  // run() creates a scheduler using the config cfg, sets the number of worker
+  // threads from the benchmark arguments, calls f, then unbinds and destructs
+  // the scheduler.
   // F must be a function of the signature: void(int numTasks)
   template <typename F>
-  void run(const ::benchmark::State& state, F&& f) {
-    marl::Scheduler::Config cfg;
+  void run(const ::benchmark::State& state,
+           marl::Scheduler::Config cfg,
+           F&& f) {
     cfg.setWorkerThreadCount(numThreads(state));
 
     marl::Scheduler scheduler(cfg);
     scheduler.bind();
     f(numTasks(state));
     scheduler.unbind();
+  }
+
+  // run() creates a scheduler, sets the number of worker threads from the
+  // benchmark arguments, calls f, then unbinds and destructs the scheduler.
+  // F must be a function of the signature: void(int numTasks)
+  template <typename F>
+  void run(const ::benchmark::State& state, F&& f) {
+    run(state, marl::Scheduler::Config{}, f);
   }
 
   // args() sets up the benchmark to run from [1 .. NumTasks] tasks (in 8^n
