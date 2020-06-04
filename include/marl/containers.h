@@ -62,8 +62,12 @@ class vector {
   inline void pop_back();
   inline T& front();
   inline T& back();
+  inline const T& front() const;
+  inline const T& back() const;
   inline T* begin();
   inline T* end();
+  inline const T* begin() const;
+  inline const T* end() const;
   inline T& operator[](size_t i);
   inline const T& operator[](size_t i) const;
   inline size_t size() const;
@@ -187,12 +191,34 @@ T& vector<T, BASE_CAPACITY>::back() {
 }
 
 template <typename T, int BASE_CAPACITY>
+const T& vector<T, BASE_CAPACITY>::front() const {
+  MARL_ASSERT(count > 0, "front() called on empty vector");
+  return reinterpret_cast<T*>(elements)[0];
+}
+
+template <typename T, int BASE_CAPACITY>
+const T& vector<T, BASE_CAPACITY>::back() const {
+  MARL_ASSERT(count > 0, "back() called on empty vector");
+  return reinterpret_cast<T*>(elements)[count - 1];
+}
+
+template <typename T, int BASE_CAPACITY>
 T* vector<T, BASE_CAPACITY>::begin() {
   return reinterpret_cast<T*>(elements);
 }
 
 template <typename T, int BASE_CAPACITY>
 T* vector<T, BASE_CAPACITY>::end() {
+  return reinterpret_cast<T*>(elements) + count;
+}
+
+template <typename T, int BASE_CAPACITY>
+const T* vector<T, BASE_CAPACITY>::begin() const {
+  return reinterpret_cast<T*>(elements);
+}
+
+template <typename T, int BASE_CAPACITY>
+const T* vector<T, BASE_CAPACITY>::end() const {
   return reinterpret_cast<T*>(elements) + count;
 }
 
