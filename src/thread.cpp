@@ -19,7 +19,6 @@
 #include "marl/trace.h"
 
 #include <algorithm>  // std::sort
-#include <unordered_set>
 
 #include <cstdarg>
 #include <cstdio>
@@ -27,9 +26,9 @@
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
+#include <array>
 #include <cstdlib>  // mbstowcs
 #include <limits>   // std::numeric_limits
-#include <vector>
 #undef max
 #elif defined(__APPLE__)
 #include <mach/thread_act.h>
@@ -81,9 +80,14 @@ struct ProcessorGroup {
   KAFFINITY affinity;  // affinity mask.
 };
 
-const std::vector<ProcessorGroup>& getProcessorGroups() {
-  static std::vector<ProcessorGroup> groups = [] {
-    std::vector<ProcessorGroup> out;
+struct ProcessorGroups {
+  std::array<ProcessorGroup, MaxGroupCount> groups;
+  size_t count;
+};
+
+const ProcessorGroups& getProcessorGroups() {
+  static ProcessorGroups groups = [] {
+    ProcessorGroups out = {};
     SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX info[32] = {};
     DWORD size = sizeof(info);
     CHECK_WIN32(GetLogicalProcessorInformationEx(RelationGroup, info, &size));
@@ -93,9 +97,9 @@ const std::vector<ProcessorGroup>& getProcessorGroups() {
         auto groupCount = info[i].Group.ActiveGroupCount;
         for (WORD groupIdx = 0; groupIdx < groupCount; groupIdx++) {
           auto const& groupInfo = info[i].Group.GroupInfo[groupIdx];
-          out.emplace_back(ProcessorGroup{groupInfo.ActiveProcessorCount,
-                                          groupInfo.ActiveProcessorMask});
-          MARL_ASSERT(out.size() <= MaxGroupCount, "Group index overflow");
+          out.groups[out.count++] = ProcessorGroup{
+              groupInfo.ActiveProcessorCount, groupInfo.ActiveProcessorMask};
+          MARL_ASSERT(out.count <= MaxGroupCount, "Group index overflow");
         }
       }
     }
@@ -129,17 +133,17 @@ Thread::Affinity Thread::Affinity::all(
   Thread::Affinity affinity(allocator);
 
 #if defined(_WIN32)
-  decltype(Core::windows.group) groupIndex = 0;
-  for (auto group : getProcessorGroups()) {
+  const auto& groups = getProcessorGroups();
+  for (size_t groupIdx = 0; groupIdx < groups.count; groupIdx++) {
+    const auto& group = groups.groups[groupIdx];
     Core core;
-    core.windows.group = static_cast<decltype(Core::windows.group)>(groupIndex);
+    core.windows.group = static_cast<decltype(Core::windows.group)>(groupIdx);
     for (unsigned int coreIdx = 0; coreIdx < group.count; coreIdx++) {
       if ((group.affinity >> coreIdx) & 1) {
         core.windows.index = static_cast<decltype(core.windows.index)>(coreIdx);
         affinity.cores.emplace_back(std::move(core));
       }
     }
-    groupIndex++;
   }
 #elif defined(__linux__)
   auto thread = pthread_self();
@@ -233,7 +237,7 @@ Thread::Core Thread::Affinity::operator[](size_t index) const {
 }
 
 Thread::Affinity& Thread::Affinity::add(const Thread::Affinity& other) {
-  std::unordered_set<Core, CoreHasher> set;
+  containers::unordered_set<Core, CoreHasher> set(cores.allocator);
   for (auto core : cores) {
     set.emplace(core);
   }
@@ -247,7 +251,7 @@ Thread::Affinity& Thread::Affinity::add(const Thread::Affinity& other) {
 }
 
 Thread::Affinity& Thread::Affinity::remove(const Thread::Affinity& other) {
-  std::unordered_set<Core, CoreHasher> set;
+  containers::unordered_set<Core, CoreHasher> set(cores.allocator);
   for (auto core : other.cores) {
     set.emplace(core);
   }
@@ -342,7 +346,9 @@ void Thread::setName(const char* fmt, ...) {
 
 unsigned int Thread::numLogicalCPUs() {
   unsigned int count = 0;
-  for (auto& group : getProcessorGroups()) {
+  const auto& groups = getProcessorGroups();
+  for (size_t groupIdx = 0; groupIdx < groups.count; groupIdx++) {
+    const auto& group = groups.groups[groupIdx];
     count += group.count;
   }
   return count;

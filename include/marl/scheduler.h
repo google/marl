@@ -15,6 +15,7 @@
 #ifndef marl_scheduler_h
 #define marl_scheduler_h
 
+#include "containers.h"
 #include "debug.h"
 #include "deprecated.h"
 #include "memory.h"
@@ -26,14 +27,8 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
-#include <deque>
 #include <functional>
-#include <map>
-#include <set>
 #include <thread>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
 namespace marl {
 
@@ -291,6 +286,8 @@ class Scheduler {
 
   // WaitingFibers holds all the fibers waiting on a timeout.
   struct WaitingFibers {
+    inline WaitingFibers(Allocator*);
+
     // operator bool() returns true iff there are any wait fibers.
     inline operator bool() const;
 
@@ -317,15 +314,15 @@ class Scheduler {
       Fiber* fiber;
       inline bool operator<(const Timeout&) const;
     };
-    std::set<Timeout> timeouts;
-    std::unordered_map<Fiber*, TimePoint> fibers;
+    containers::set<Timeout, std::less<Timeout>> timeouts;
+    containers::unordered_map<Fiber*, TimePoint> fibers;
   };
 
   // TODO: Implement a queue that recycles elements to reduce number of
   // heap allocations.
-  using TaskQueue = std::deque<Task>;
-  using FiberQueue = std::deque<Fiber*>;
-  using FiberSet = std::unordered_set<Fiber*>;
+  using TaskQueue = containers::deque<Task>;
+  using FiberQueue = containers::deque<Fiber*>;
+  using FiberSet = containers::unordered_set<Fiber*>;
 
   // Workers executes Tasks on a single thread.
   // Once a task is started, it may yield to other tasks on the same Worker.
@@ -437,6 +434,8 @@ class Scheduler {
 
     // Work holds tasks and fibers that are enqueued on the Worker.
     struct Work {
+      inline Work(Allocator*);
+
       std::atomic<uint64_t> num = {0};  // tasks.size() + fibers.size()
       GUARDED_BY(mutex) uint64_t numBlockedFibers = 0;
       GUARDED_BY(mutex) TaskQueue tasks;
@@ -474,7 +473,7 @@ class Scheduler {
     Thread thread;
     Work work;
     FiberSet idleFibers;  // Fibers that have completed which can be reused.
-    std::vector<Allocator::unique_ptr<Fiber>>
+    containers::vector<Allocator::unique_ptr<Fiber>, 16>
         workerFibers;  // All fibers created by this worker.
     FastRnd rng;
     bool shutdown = false;
@@ -506,8 +505,11 @@ class Scheduler {
   std::array<Worker*, MaxWorkerThreads> workerThreads;
 
   struct SingleThreadedWorkers {
+    inline SingleThreadedWorkers(Allocator*);
+
     using WorkerByTid =
-        std::unordered_map<std::thread::id, Allocator::unique_ptr<Worker>>;
+        containers::unordered_map<std::thread::id,
+                                  Allocator::unique_ptr<Worker>>;
     marl::mutex mutex;
     GUARDED_BY(mutex) std::condition_variable unbind;
     GUARDED_BY(mutex) WorkerByTid byTid;
