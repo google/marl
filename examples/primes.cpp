@@ -20,6 +20,8 @@
 #include "marl/thread.h"
 #include "marl/ticket.h"
 
+#include <vector>
+
 #include <math.h>
 
 // searchMax defines the upper limit on primes to find.

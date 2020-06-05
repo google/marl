@@ -14,12 +14,12 @@
 
 #include "marl_test.h"
 
+#include "marl/containers.h"
 #include "marl/defer.h"
 #include "marl/event.h"
 #include "marl/waitgroup.h"
 
 #include <atomic>
-#include <unordered_set>
 
 TEST_F(WithoutBoundScheduler, SchedulerConstructAndDestruct) {
   auto scheduler = std::unique_ptr<marl::Scheduler>(
@@ -120,9 +120,9 @@ TEST_P(WithBoundScheduler, FibersResumeOnSameStdThread) {
   marl::WaitGroup fence(1);
   marl::WaitGroup wg(num_threads);
 
-  std::vector<std::thread> threads;
+  marl::containers::vector<std::thread, 32> threads;
   for (int i = 0; i < num_threads; i++) {
-    threads.push_back(std::thread([=] {
+    threads.emplace_back(std::thread([=] {
       scheduler->bind();
       defer(scheduler->unbind());
 
@@ -151,7 +151,7 @@ TEST_F(WithoutBoundScheduler, TasksOnlyScheduledOnWorkerThreads) {
   defer(scheduler->unbind());
 
   std::mutex mutex;
-  std::unordered_set<std::thread::id> threads;
+  marl::containers::unordered_set<std::thread::id> threads(allocator);
   marl::WaitGroup wg;
   for (int i = 0; i < 10000; i++) {
     wg.add(1);

@@ -22,18 +22,66 @@
 #include <cstddef>    // size_t
 #include <utility>    // std::move
 
+#include <deque>
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+
 namespace marl {
 namespace containers {
+
+////////////////////////////////////////////////////////////////////////////////
+// STL wrappers
+// STL containers that use a marl::StlAllocator backed by a marl::Allocator.
+// Note: These may be re-implemented to optimize for marl's usage cases.
+// See: https://github.com/google/marl/issues/129
+////////////////////////////////////////////////////////////////////////////////
+template <typename T>
+using deque = std::deque<T, StlAllocator<T>>;
+
+template <typename K, typename V, typename C = std::less<K>>
+using map = std::map<K, V, C, StlAllocator<std::pair<const K, V>>>;
+
+template <typename K, typename C = std::less<K>>
+using set = std::set<K, C, StlAllocator<K>>;
+
+template <typename K,
+          typename V,
+          typename H = std::hash<K>,
+          typename E = std::equal_to<K>>
+using unordered_map =
+    std::unordered_map<K, V, H, E, StlAllocator<std::pair<const K, V>>>;
+
+template <typename K, typename H = std::hash<K>, typename E = std::equal_to<K>>
+using unordered_set = std::unordered_set<K, H, E, StlAllocator<K>>;
+
+// take() takes and returns the front value from the deque.
+template <typename T>
+inline T take(deque<T>& queue) {
+  auto out = std::move(queue.front());
+  queue.pop_front();
+  return out;
+}
+
+// take() takes and returns the first value from the unordered_set.
+template <typename T, typename H, typename E>
+inline T take(unordered_set<T, H, E>& set) {
+  auto it = set.begin();
+  auto out = std::move(*it);
+  set.erase(it);
+  return out;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // vector<T, BASE_CAPACITY>
 ////////////////////////////////////////////////////////////////////////////////
 
 // vector is a container of contiguously stored elements.
-// Unlike std::vector, marl::containers::vector keeps the first BASE_CAPACITY
-// elements internally, which will avoid dynamic heap allocations.
-// Once the vector exceeds BASE_CAPACITY elements, vector will allocate storage
-// from the heap.
+// Unlike std::vector, marl::containers::vector keeps the first
+// BASE_CAPACITY elements internally, which will avoid dynamic heap
+// allocations. Once the vector exceeds BASE_CAPACITY elements, vector will
+// allocate storage from the heap.
 template <typename T, int BASE_CAPACITY>
 class vector {
  public:
@@ -74,6 +122,10 @@ class vector {
   inline size_t cap() const;
   inline void resize(size_t n);
   inline void reserve(size_t n);
+  inline T* data();
+  inline const T* data() const;
+
+  Allocator* const allocator;
 
  private:
   using TStorage = typename marl::aligned_storage<sizeof(T), alignof(T)>::type;
@@ -82,7 +134,6 @@ class vector {
 
   inline void free();
 
-  Allocator* const allocator;
   size_t count = 0;
   size_t capacity = BASE_CAPACITY;
   TStorage buffer[BASE_CAPACITY];
@@ -270,6 +321,16 @@ void vector<T, BASE_CAPACITY>::reserve(size_t n) {
     elements = grown;
     allocation = alloc;
   }
+}
+
+template <typename T, int BASE_CAPACITY>
+T* vector<T, BASE_CAPACITY>::data() {
+  return elements;
+}
+
+template <typename T, int BASE_CAPACITY>
+const T* vector<T, BASE_CAPACITY>::data() const {
+  return elements;
 }
 
 template <typename T, int BASE_CAPACITY>
