@@ -4,10 +4,15 @@
         "link": "https://github.com/google/marl/blob/master/src/scheduler_bench.cpp",
         "order": 0
     },
+    "Schedule/SomeWorkWorkerAffinityOneOf": {
+        "description": "Execution performance of calling <code>marl::schedule()</code> with a reasonable work load, using worker threads pinned to individual cores.",
+        "link": "https://github.com/google/marl/blob/master/src/scheduler_bench.cpp",
+        "order": 1
+    },
     "Schedule/Empty": {
         "description": "Execution performance of calling <code>marl::schedule()</code> with an empty function.",
         "link": "https://github.com/google/marl/blob/master/src/scheduler_bench.cpp",
-        "order": 1
+        "order": 2
     },
     "BlockingCall": {
         "description": "Time taken to perform a call to <code>marl::blocking_call()</code>.<br/>Requires creating a <code>std::thread</code>, and calling <code>join()</code> on it.",
