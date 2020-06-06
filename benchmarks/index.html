@@ -266,7 +266,8 @@
                             ticks: {
                                 callback: function (value, index, values) {
                                     return formatNanoseconds(value);
-                                }
+                                },
+                                beginAtZero: true
                             }
                         }],
                     },
@@ -302,7 +303,6 @@
             }
 
             Promise.all(fetches).then((jsons) => {
-                let labels = ["win10", "ubuntu"];
                 let benchmarks = Object.values(jsons.map(o => o.benchmarks)).map(o => groupBenchmarks(o));
                 let benchmarkNames = Object.keys(benchmarks[0]);
 
