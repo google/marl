@@ -17,8 +17,8 @@
 
 #include "benchmark/benchmark.h"
 
-// Define MARL_FULL_BENCHMARK to 1 if you want to test every available
-// logical CPU core across a range of different task sizes.
+// Define MARL_FULL_BENCHMARK to 1 if you want to run benchmarks for every
+// available logical CPU core.
 #ifndef MARL_FULL_BENCHMARK
 #define MARL_FULL_BENCHMARK 0
 #endif
@@ -55,25 +55,26 @@ class Schedule : public benchmark::Fixture {
 
   // args() sets up the benchmark to run a number of tasks over a number of
   // threads.
-  // If MARL_FULL_BENCHMARK is enabled, then [1 .. NumTasks] tasks will be run
-  // in 8^n steps and across 0 worker threads to numLogicalCPUs.
+  // If MARL_FULL_BENCHMARK is enabled, then NumTasks tasks will be run
+  // across from 0 to numLogicalCPUs worker threads.
   // If MARL_FULL_BENCHMARK is not enabled, then NumTasks tasks will be run
   // across [0 .. numLogicalCPUs] worker threads in 2^n steps.
   template <int NumTasks = 0x40000>
   static void args(benchmark::internal::Benchmark* b) {
     b->ArgNames({"tasks", "threads"});
     b->Args({NumTasks, 0});
+    auto numLogicalCPUs = marl::Thread::numLogicalCPUs();
 #if MARL_FULL_BENCHMARK
-    for (unsigned int tasks = 1U; tasks <= NumTasks; tasks *= 8) {
-      for (unsigned int threads = 1U; threads <= marl::Thread::numLogicalCPUs();
-           threads++) {
-        b->Args({NumTasks, threads});
-      }
+    for (unsigned int threads = 1U; threads <= numLogicalCPUs; threads++) {
+      b->Args({NumTasks, threads});
     }
 #else
-    for (unsigned int threads = 1U; threads <= marl::Thread::numLogicalCPUs();
-         threads *= 2) {
+    for (unsigned int threads = 1U; threads <= numLogicalCPUs; threads *= 2) {
       b->Args({NumTasks, threads});
+    }
+    if ((numLogicalCPUs & (numLogicalCPUs - 1)) != 0) {
+      // numLogicalCPUs is not a power-of-two. Also test with numLogicalCPUs.
+      b->Args({NumTasks, numLogicalCPUs});
     }
 #endif
   }

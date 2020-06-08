@@ -43,7 +43,7 @@ option_if_not_defined(MARL_ASAN "Build marl with address sanitizer" OFF)
 option_if_not_defined(MARL_MSAN "Build marl with memory sanitizer" OFF)
 option_if_not_defined(MARL_TSAN "Build marl with thread sanitizer" OFF)
 option_if_not_defined(MARL_INSTALL "Create marl install target" OFF)
-option_if_not_defined(MARL_FULL_BENCHMARK "Benchmark all cores and a range of tasks" OFF)
+option_if_not_defined(MARL_FULL_BENCHMARK "Run benchmarks for [0 .. numLogicalCPUs] with no stepping" OFF)
 option_if_not_defined(MARL_DEBUG_ENABLED "Enable debug checks even in release builds" OFF)
 
 ###########################################################
