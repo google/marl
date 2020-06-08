@@ -71,4 +71,4 @@ BENCHMARK_DEFINE_F(Schedule, EventBaton)(benchmark::State& state) {
     }
   });
 }
-BENCHMARK_REGISTER_F(Schedule, EventBaton)->Apply(Schedule::args<1000000>);
+BENCHMARK_REGISTER_F(Schedule, EventBaton)->Apply(Schedule::args<262144>);
