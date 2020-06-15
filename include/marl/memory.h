@@ -16,6 +16,7 @@
 #define marl_memory_h
 
 #include "debug.h"
+#include "export.h"
 
 #include <stdint.h>
 
@@ -32,6 +33,7 @@ struct StlAllocator;
 
 // pageSize() returns the size in bytes of a virtual memory page for the host
 // system.
+MARL_EXPORT
 size_t pageSize();
 
 template <typename T>
@@ -87,6 +89,7 @@ class Allocator {
  public:
   // The default allocator. Initialized with an implementation that allocates
   // from the OS. Can be assigned a custom implementation.
+  MARL_EXPORT
   static Allocator* Default;
 
   // Deleter is a smart-pointer compatible deleter that can be used to delete

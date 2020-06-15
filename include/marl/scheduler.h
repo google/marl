@@ -18,6 +18,7 @@
 #include "containers.h"
 #include "debug.h"
 #include "deprecated.h"
+#include "export.h"
 #include "memory.h"
 #include "mutex.h"
 #include "task.h"
@@ -64,6 +65,7 @@ class Scheduler {
 
     // allCores() returns a Config with a worker thread for each of the logical
     // cpus available to the process.
+    MARL_EXPORT
     static Config allCores();
 
     // Fluent setters that return this Config so set calls can be chained.
@@ -75,33 +77,41 @@ class Scheduler {
   };
 
   // Constructor.
+  MARL_EXPORT
   Scheduler(const Config&);
 
   // Destructor.
   // Blocks until the scheduler is unbound from all threads before returning.
+  MARL_EXPORT
   ~Scheduler();
 
   // get() returns the scheduler bound to the current thread.
+  MARL_EXPORT
   static Scheduler* get();
 
   // bind() binds this scheduler to the current thread.
   // There must be no existing scheduler bound to the thread prior to calling.
+  MARL_EXPORT
   void bind();
 
   // unbind() unbinds the scheduler currently bound to the current thread.
   // There must be a existing scheduler bound to the thread prior to calling.
   // unbind() flushes any enqueued tasks on the single-threaded worker before
   // returning.
+  MARL_EXPORT
   static void unbind();
 
   // enqueue() queues the task for asynchronous execution.
+  MARL_EXPORT
   void enqueue(Task&& task);
 
   // config() returns the Config that was used to build the schededuler.
+  MARL_EXPORT
   const Config& config() const;
 
 #if MARL_ENABLE_DEPRECATED_SCHEDULER_GETTERS_SETTERS
   MARL_DEPRECATED(139, "use Scheduler::Scheduler(const Config&)")
+  MARL_EXPORT
   Scheduler(Allocator* allocator = Allocator::Default);
 
   // setThreadInitializer() sets the worker thread initializer function which
@@ -109,11 +119,13 @@ class Scheduler {
   // The initializer will only be called on newly created threads (call
   // setThreadInitializer() before setWorkerThreadCount()).
   MARL_DEPRECATED(139, "use Config::setWorkerThreadInitializer()")
+  MARL_EXPORT
   void setThreadInitializer(const std::function<void()>& init);
 
   // getThreadInitializer() returns the thread initializer function set by
   // setThreadInitializer().
   MARL_DEPRECATED(139, "use config().workerThread.initializer")
+  MARL_EXPORT
   std::function<void()> getThreadInitializer();
 
   // setWorkerThreadCount() adjusts the number of dedicated worker threads.
@@ -121,10 +133,12 @@ class Scheduler {
   // Note: Currently the number of threads cannot be adjusted once tasks
   // have been enqueued. This restriction may be lifted at a later time.
   MARL_DEPRECATED(139, "use Config::setWorkerThreadCount()")
+  MARL_EXPORT
   void setWorkerThreadCount(int count);
 
   // getWorkerThreadCount() returns the number of worker threads.
   MARL_DEPRECATED(139, "use config().workerThread.count")
+  MARL_EXPORT
   int getWorkerThreadCount();
 #endif  // MARL_ENABLE_DEPRECATED_SCHEDULER_GETTERS_SETTERS
 
@@ -141,6 +155,7 @@ class Scheduler {
    public:
     // current() returns the currently executing fiber, or nullptr if called
     // without a bound scheduler.
+    MARL_EXPORT
     static Fiber* current();
 
     // wait() suspends execution of this Fiber until the Fiber is woken up with
@@ -155,6 +170,7 @@ class Scheduler {
     // will be locked before wait() returns.
     // pred will be always be called with the lock held.
     // wait() must only be called on the currently executing fiber.
+    MARL_EXPORT
     void wait(marl::lock& lock, const Predicate& pred);
 
     // wait() suspends execution of this Fiber until the Fiber is woken up with
@@ -212,6 +228,7 @@ class Scheduler {
     // notify() reschedules the suspended Fiber for execution.
     // notify() is usually only called when the predicate for one or more wait()
     // calls will likely return true.
+    MARL_EXPORT
     void notify();
 
     // id is the thread-unique identifier of the Fiber.
@@ -349,12 +366,14 @@ class Scheduler {
     // wait() suspends execution of the current task until the predicate pred
     // returns true or the optional timeout is reached.
     // See Fiber::wait() for more information.
+    MARL_EXPORT
     bool wait(marl::lock& lock, const TimePoint* timeout, const Predicate& pred)
         EXCLUDES(work.mutex);
 
     // wait() suspends execution of the current task until the fiber is
     // notified, or the optional timeout is reached.
     // See Fiber::wait() for more information.
+    MARL_EXPORT
     bool wait(const TimePoint* timeout) EXCLUDES(work.mutex);
 
     // suspend() suspends the currenetly executing Fiber until the fiber is

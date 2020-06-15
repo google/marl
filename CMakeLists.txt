@@ -209,6 +209,12 @@ endfunction(marl_set_target_options)
 # marl
 if(MARL_BUILD_SHARED) # Can also be controlled by BUILD_SHARED_LIBS
     add_library(marl SHARED ${MARL_LIST})
+    if(MSVC)
+        target_compile_definitions(marl 
+            PRIVATE "MARL_BUILDING_DLL=1"
+            PUBLIC  "MARL_DLL=1"
+        )
+    endif()
 else()
     add_library(marl ${MARL_LIST})
 endif()
