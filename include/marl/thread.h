@@ -15,9 +15,10 @@
 #ifndef marl_thread_h
 #define marl_thread_h
 
-#include <functional>
-
 #include "containers.h"
+#include "export.h"
+
+#include <functional>
 
 namespace marl {
 
@@ -70,6 +71,7 @@ class Thread {
       // Windows requires that each thread is only associated with a
       // single affinity group, so the Policy's returned affinity will contain
       // cores all from the same group.
+      MARL_EXPORT
       static std::shared_ptr<Policy> anyOf(
           Affinity&& affinity,
           Allocator* allocator = Allocator::Default);
@@ -78,35 +80,48 @@ class Thread {
       // core from affinity. The single enabled core in the Policy's returned
       // affinity is:
       //      affinity[threadId % affinity.count()]
+      MARL_EXPORT
       static std::shared_ptr<Policy> oneOf(
           Affinity&& affinity,
           Allocator* allocator = Allocator::Default);
 
       // get() returns the thread Affinity for the for the given thread by id.
+      MARL_EXPORT
       virtual Affinity get(uint32_t threadId, Allocator* allocator) const = 0;
     };
 
+    MARL_EXPORT
     Affinity(Allocator*);
+
+    MARL_EXPORT
     Affinity(Affinity&&);
+
+    MARL_EXPORT
     Affinity(const Affinity&, Allocator* allocator);
 
     // all() returns an Affinity with all the cores available to the process.
+    MARL_EXPORT
     static Affinity all(Allocator* allocator = Allocator::Default);
 
+    MARL_EXPORT
     Affinity(std::initializer_list<Core>, Allocator* allocator);
 
     // count() returns the number of enabled cores in the affinity.
+    MARL_EXPORT
     size_t count() const;
 
     // operator[] returns the i'th enabled core from this affinity.
+    MARL_EXPORT
     Core operator[](size_t index) const;
 
     // add() adds the cores from the given affinity to this affinity.
     // This affinity is returned to allow for fluent calls.
+    MARL_EXPORT
     Affinity& add(const Affinity&);
 
     // remove() removes the cores from the given affinity from this affinity.
     // This affinity is returned to allow for fluent calls.
+    MARL_EXPORT
     Affinity& remove(const Affinity&);
 
    private:
@@ -115,24 +130,34 @@ class Thread {
     containers::vector<Core, 32> cores;
   };
 
+  MARL_EXPORT
   Thread() = default;
+
+  MARL_EXPORT
   Thread(Thread&&);
+
+  MARL_EXPORT
   Thread& operator=(Thread&&);
 
   // Start a new thread using the given affinity that calls func.
+  MARL_EXPORT
   Thread(Affinity&& affinity, Func&& func);
 
+  MARL_EXPORT
   ~Thread();
 
   // join() blocks until the thread completes.
+  MARL_EXPORT
   void join();
 
   // setName() sets the name of the currently executing thread for displaying
   // in a debugger.
+  MARL_EXPORT
   static void setName(const char* fmt, ...);
 
   // numLogicalCPUs() returns the number of available logical CPU cores for
   // the system.
+  MARL_EXPORT
   static unsigned int numLogicalCPUs();
 
  private:
