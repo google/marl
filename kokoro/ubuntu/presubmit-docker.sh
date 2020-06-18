@@ -18,13 +18,24 @@ if [ "$BUILD_SYSTEM" == "cmake" ]; then
     mkdir build
     cd build
 
-    if [ "$BUILD_TOOLCHAIN" == "clang" ]; then
-        using clang-10.0.0
-    fi
-
     EXTRA_CMAKE_FLAGS=""
-    if [ "$BUILD_TARGET_ARCH" == "x86" ]; then
-        EXTRA_CMAKE_FLAGS="-DCMAKE_CXX_FLAGS=-m32 -DCMAKE_C_FLAGS=-m32 -DCMAKE_ASM_FLAGS=-m32"
+
+    if [ "$BUILD_TOOLCHAIN" == "ndk" ]; then
+        using ndk-r21d
+        EXTRA_CMAKE_FLAGS="$EXTRA_CMAKE_FLAGS \
+                          -DANDROID_ABI=$BUILD_TARGET_ARCH \
+                          -DANDROID_NATIVE_API_LEVEL=18 \
+                          -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake"
+    else # !ndk
+        if [ "$BUILD_TOOLCHAIN" == "clang" ]; then
+            using clang-10.0.0
+        fi
+        if [ "$BUILD_TARGET_ARCH" == "x86" ]; then
+            EXTRA_CMAKE_FLAGS="$EXTRA_CMAKE_FLAGS    \
+                              -DCMAKE_CXX_FLAGS=-m32 \
+                              -DCMAKE_C_FLAGS=-m32   \
+                              -DCMAKE_ASM_FLAGS=-m32"
+        fi
     fi
 
     if [ "$BUILD_SANITIZER" == "asan" ]; then
@@ -44,11 +55,13 @@ if [ "$BUILD_SYSTEM" == "cmake" ]; then
 
     make --jobs=$(nproc)
 
-    ./marl-unittests
-    ./fractal
-    ./hello_task
-    ./primes > /dev/null
-    ./tasks_in_tasks
+    if [ "$BUILD_TOOLCHAIN" != "ndk" ]; then
+        ./marl-unittests
+        ./fractal
+        ./hello_task
+        ./primes > /dev/null
+        ./tasks_in_tasks
+    fi
 
 elif [ "$BUILD_SYSTEM" == "bazel" ]; then
     using bazel-3.1.0
