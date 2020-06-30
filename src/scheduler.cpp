@@ -67,6 +67,16 @@ inline void nop() {
 #endif
 }
 
+inline marl::Scheduler::Config setConfigDefaults(
+    const marl::Scheduler::Config& cfgIn) {
+  marl::Scheduler::Config cfg{cfgIn};
+  if (cfg.workerThread.count > 0 && !cfg.workerThread.affinityPolicy) {
+    cfg.workerThread.affinityPolicy = marl::Thread::Affinity::Policy::anyOf(
+        marl::Thread::Affinity::all(cfg.allocator), cfg.allocator);
+  }
+  return cfg;
+}
+
 }  // anonymous namespace
 
 namespace marl {
@@ -113,11 +123,9 @@ void Scheduler::unbind() {
 }
 
 Scheduler::Scheduler(const Config& config)
-    : cfg(config), workerThreads{}, singleThreadedWorkers(config.allocator) {
-  if (cfg.workerThread.count > 0 && !cfg.workerThread.affinityPolicy) {
-    cfg.workerThread.affinityPolicy = Thread::Affinity::Policy::anyOf(
-        Thread::Affinity::all(cfg.allocator), cfg.allocator);
-  }
+    : cfg(setConfigDefaults(config)),
+      workerThreads{},
+      singleThreadedWorkers(config.allocator) {
   for (size_t i = 0; i < spinningWorkers.size(); i++) {
     spinningWorkers[i] = -1;
   }
