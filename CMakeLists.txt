@@ -15,7 +15,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 include(cmake/parse_version.cmake)
-parse_version("${CMAKE_CURRENT_SOURCE_DIR}/VERSION" MARL)
+parse_version("${CMAKE_CURRENT_SOURCE_DIR}/CHANGES.md" MARL)
 
 set(CMAKE_CXX_STANDARD 11)
 
