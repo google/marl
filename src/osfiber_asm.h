@@ -38,6 +38,7 @@
 #error "Unsupported target"
 #endif
 
+#include "marl/export.h"
 #include "marl/memory.h"
 
 #include <functional>
@@ -45,11 +46,13 @@
 
 extern "C" {
 
+MARL_EXPORT
 extern void marl_fiber_set_target(marl_fiber_context*,
                                   void* stack,
                                   uint32_t stack_size,
                                   void (*target)(void*),
                                   void* arg);
+MARL_EXPORT
 extern void marl_fiber_swap(marl_fiber_context* from,
                             const marl_fiber_context* to);
 
