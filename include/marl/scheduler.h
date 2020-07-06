@@ -69,10 +69,11 @@ class Scheduler {
     static Config allCores();
 
     // Fluent setters that return this Config so set calls can be chained.
-    inline Config& setAllocator(Allocator*);
-    inline Config& setWorkerThreadCount(int);
-    inline Config& setWorkerThreadInitializer(const ThreadInitializer&);
-    inline Config& setWorkerThreadAffinityPolicy(
+    MARL_NO_EXPORT inline Config& setAllocator(Allocator*);
+    MARL_NO_EXPORT inline Config& setWorkerThreadCount(int);
+    MARL_NO_EXPORT inline Config& setWorkerThreadInitializer(
+        const ThreadInitializer&);
+    MARL_NO_EXPORT inline Config& setWorkerThreadAffinityPolicy(
         const std::shared_ptr<Thread::Affinity::Policy>&);
   };
 
@@ -188,9 +189,10 @@ class Scheduler {
     // pred will be always be called with the lock held.
     // wait() must only be called on the currently executing fiber.
     template <typename Clock, typename Duration>
-    inline bool wait(marl::lock& lock,
-                     const std::chrono::time_point<Clock, Duration>& timeout,
-                     const Predicate& pred);
+    MARL_NO_EXPORT inline bool wait(
+        marl::lock& lock,
+        const std::chrono::time_point<Clock, Duration>& timeout,
+        const Predicate& pred);
 
     // wait() suspends execution of this Fiber until the Fiber is woken up with
     // a call to notify().
@@ -206,7 +208,7 @@ class Scheduler {
     // wait() and notify() are made by the same thread.
     //
     // Use with extreme caution.
-    inline void wait();
+    MARL_NO_EXPORT inline void wait();
 
     // wait() suspends execution of this Fiber until the Fiber is woken up with
     // a call to notify(), or sometime after the timeout is reached.
@@ -223,7 +225,8 @@ class Scheduler {
     //
     // Use with extreme caution.
     template <typename Clock, typename Duration>
-    inline bool wait(const std::chrono::time_point<Clock, Duration>& timeout);
+    MARL_NO_EXPORT inline bool wait(
+        const std::chrono::time_point<Clock, Duration>& timeout);
 
     // notify() reschedules the suspended Fiber for execution.
     // notify() is usually only called when the predicate for one or more wait()
