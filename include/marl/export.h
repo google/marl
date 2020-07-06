@@ -27,8 +27,15 @@
 
 #if __GNUC__ >= 4
 #define MARL_EXPORT __attribute__((visibility("default")))
-#else
+#define MARL_NO_EXPORT __attribute__((visibility("hidden")))
+#endif
+
+#ifndef MARL_EXPORT
 #define MARL_EXPORT
+#endif
+
+#ifndef MARL_NO_EXPORT
+#define MARL_NO_EXPORT
 #endif
 
 #endif  //

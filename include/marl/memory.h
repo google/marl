@@ -37,7 +37,7 @@ MARL_EXPORT
 size_t pageSize();
 
 template <typename T>
-inline T alignUp(T val, T alignment) {
+MARL_NO_EXPORT inline T alignUp(T val, T alignment) {
   return alignment * ((val + alignment - 1) / alignment);
 }
 
@@ -89,18 +89,17 @@ class Allocator {
  public:
   // The default allocator. Initialized with an implementation that allocates
   // from the OS. Can be assigned a custom implementation.
-  MARL_EXPORT
-  static Allocator* Default;
+  MARL_EXPORT static Allocator* Default;
 
   // Deleter is a smart-pointer compatible deleter that can be used to delete
   // objects created by Allocator::create(). Deleter is used by the smart
   // pointers returned by make_shared() and make_unique().
-  struct Deleter {
-    inline Deleter();
-    inline Deleter(Allocator* allocator);
+  struct MARL_EXPORT Deleter {
+    MARL_NO_EXPORT inline Deleter();
+    MARL_NO_EXPORT inline Deleter(Allocator* allocator);
 
     template <typename T>
-    inline void operator()(T* object);
+    MARL_NO_EXPORT inline void operator()(T* object);
 
     Allocator* allocator = nullptr;
   };

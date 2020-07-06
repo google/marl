@@ -67,22 +67,23 @@ class OSFiber {
 
   // createFiberFromCurrentThread() returns a fiber created from the current
   // thread.
-  static inline Allocator::unique_ptr<OSFiber> createFiberFromCurrentThread(
-      Allocator* allocator);
+  MARL_NO_EXPORT static inline Allocator::unique_ptr<OSFiber>
+  createFiberFromCurrentThread(Allocator* allocator);
 
   // createFiber() returns a new fiber with the given stack size that will
   // call func when switched to. func() must end by switching back to another
   // fiber, and must not return.
-  static inline Allocator::unique_ptr<OSFiber> createFiber(
+  MARL_NO_EXPORT static inline Allocator::unique_ptr<OSFiber> createFiber(
       Allocator* allocator,
       size_t stackSize,
       const std::function<void()>& func);
 
   // switchTo() immediately switches execution to the given fiber.
   // switchTo() must be called on the currently executing fiber.
-  inline void switchTo(OSFiber*);
+  MARL_NO_EXPORT inline void switchTo(OSFiber*);
 
  private:
+  MARL_NO_EXPORT
   static inline void run(OSFiber* self);
 
   Allocator* allocator;
