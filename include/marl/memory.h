@@ -96,12 +96,13 @@ class Allocator {
   // pointers returned by make_shared() and make_unique().
   struct MARL_EXPORT Deleter {
     MARL_NO_EXPORT inline Deleter();
-    MARL_NO_EXPORT inline Deleter(Allocator* allocator);
+    MARL_NO_EXPORT inline Deleter(Allocator* allocator, size_t count);
 
     template <typename T>
     MARL_NO_EXPORT inline void operator()(T* object);
 
     Allocator* allocator = nullptr;
+    size_t count = 0;
   };
 
   // unique_ptr<T> is an alias to std::unique_ptr<T, Deleter>.
@@ -134,6 +135,12 @@ class Allocator {
   template <typename T, typename... ARGS>
   inline unique_ptr<T> make_unique(ARGS&&... args);
 
+  // make_unique_n() returns an array of n new objects allocated from the
+  // allocator wrapped in a unique_ptr that respects the alignemnt of the
+  // type.
+  template <typename T, typename... ARGS>
+  inline unique_ptr<T> make_unique_n(size_t n, ARGS&&... args);
+
   // make_shared() returns a new object allocated from the allocator
   // wrapped in a std::shared_ptr that respects the alignemnt of the type.
   template <typename T, typename... ARGS>
@@ -143,8 +150,12 @@ class Allocator {
   Allocator() = default;
 };
 
+///////////////////////////////////////////////////////////////////////////////
+// Allocator::Deleter
+///////////////////////////////////////////////////////////////////////////////
 Allocator::Deleter::Deleter() : allocator(nullptr) {}
-Allocator::Deleter::Deleter(Allocator* allocator) : allocator(allocator) {}
+Allocator::Deleter::Deleter(Allocator* allocator, size_t count)
+    : allocator(allocator), count(count) {}
 
 template <typename T>
 void Allocator::Deleter::operator()(T* object) {
@@ -152,12 +163,15 @@ void Allocator::Deleter::operator()(T* object) {
 
   Allocation allocation;
   allocation.ptr = object;
-  allocation.request.size = sizeof(T);
+  allocation.request.size = sizeof(T) * count;
   allocation.request.alignment = alignof(T);
   allocation.request.usage = Allocation::Usage::Create;
   allocator->free(allocation);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Allocator
+///////////////////////////////////////////////////////////////////////////////
 template <typename T, typename... ARGS>
 T* Allocator::create(ARGS&&... args) {
   Allocation::Request request;
@@ -184,14 +198,23 @@ void Allocator::destroy(T* object) {
 
 template <typename T, typename... ARGS>
 Allocator::unique_ptr<T> Allocator::make_unique(ARGS&&... args) {
+  return make_unique_n<T>(1, std::forward<ARGS>(args)...);
+}
+
+template <typename T, typename... ARGS>
+Allocator::unique_ptr<T> Allocator::make_unique_n(size_t n, ARGS&&... args) {
+  if (n == 0) {
+    return nullptr;
+  }
+
   Allocation::Request request;
-  request.size = sizeof(T);
+  request.size = sizeof(T) * n;
   request.alignment = alignof(T);
   request.usage = Allocation::Usage::Create;
 
   auto alloc = allocate(request);
   new (alloc.ptr) T(std::forward<ARGS>(args)...);
-  return unique_ptr<T>(reinterpret_cast<T*>(alloc.ptr), Deleter{this});
+  return unique_ptr<T>(reinterpret_cast<T*>(alloc.ptr), Deleter{this, n});
 }
 
 template <typename T, typename... ARGS>
@@ -203,7 +226,7 @@ std::shared_ptr<T> Allocator::make_shared(ARGS&&... args) {
 
   auto alloc = allocate(request);
   new (alloc.ptr) T(std::forward<ARGS>(args)...);
-  return std::shared_ptr<T>(reinterpret_cast<T*>(alloc.ptr), Deleter{this});
+  return std::shared_ptr<T>(reinterpret_cast<T*>(alloc.ptr), Deleter{this, 1});
 }
 
 ///////////////////////////////////////////////////////////////////////////////
