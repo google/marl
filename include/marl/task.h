@@ -15,6 +15,8 @@
 #ifndef marl_task_h
 #define marl_task_h
 
+#include "export.h"
+
 #include <functional>
 
 namespace marl {
