@@ -30,8 +30,6 @@
 #define MARL_NO_EXPORT __attribute__((visibility("hidden")))
 #endif
 
-#endif
-
 #ifndef MARL_EXPORT
 #define MARL_EXPORT
 #endif
@@ -39,5 +37,7 @@
 #ifndef MARL_NO_EXPORT
 #define MARL_NO_EXPORT
 #endif
+
+#endif  //
 
 #endif  // marl_export_h
