@@ -614,7 +614,7 @@ inline void schedule(Function&& f, Args&&... args) {
   MARL_ASSERT_HAS_BOUND_SCHEDULER("marl::schedule");
   auto scheduler = Scheduler::get();
   scheduler->enqueue(
-      std::bind(std::forward<Function>(f), std::forward<Args>(args)...));
+      Task(std::bind(std::forward<Function>(f), std::forward<Args>(args)...)));
 }
 
 // schedule() schedules the function f to be asynchronously called using the
