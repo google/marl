@@ -12,7 +12,6 @@ if !ERRORLEVEL! neq 0 exit !ERRORLEVEL!
 git submodule update --init
 if !ERRORLEVEL! neq 0 exit !ERRORLEVEL!
 
-SET MSBUILD="C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin\MSBuild"
 SET CONFIG=Release
 
 mkdir %SRC%\build
@@ -20,15 +19,23 @@ cd %SRC%\build
 if !ERRORLEVEL! neq 0 exit !ERRORLEVEL!
 
 IF /I "%BUILD_SYSTEM%"=="cmake" (
-    cmake .. -G "%BUILD_GENERATOR%" "-DMARL_BUILD_TESTS=1" "-DMARL_BUILD_EXAMPLES=1" "-DMARL_BUILD_BENCHMARKS=1" "-DMARL_WARNINGS_AS_ERRORS=1" "-DMARL_DEBUG_ENABLED=1"
+    cmake .. ^
+        -G "%BUILD_GENERATOR%" ^
+        -A "%BUILD_TARGET_ARCH%" ^
+        "-DMARL_BUILD_TESTS=1" ^
+        "-DMARL_BUILD_EXAMPLES=1" ^
+        "-DMARL_BUILD_BENCHMARKS=1" ^
+        "-DMARL_WARNINGS_AS_ERRORS=1" ^
+        "-DMARL_DEBUG_ENABLED=1"
     if !ERRORLEVEL! neq 0 exit !ERRORLEVEL!
-    %MSBUILD% /p:Configuration=%CONFIG% Marl.sln
+    cmake --build . --config %CONFIG%
+
     if !ERRORLEVEL! neq 0 exit !ERRORLEVEL!
-    Release\marl-unittests.exe
+    %CONFIG%\marl-unittests.exe
     if !ERRORLEVEL! neq 0 exit !ERRORLEVEL!
-    Release\fractal.exe
+    %CONFIG%\fractal.exe
     if !ERRORLEVEL! neq 0 exit !ERRORLEVEL!
-    Release\primes.exe > nul
+    %CONFIG%\primes.exe > nul
     if !ERRORLEVEL! neq 0 exit !ERRORLEVEL!
 ) ELSE IF /I "%BUILD_SYSTEM%"=="bazel" (
     REM Fix up the MSYS environment.
