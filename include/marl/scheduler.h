@@ -110,39 +110,6 @@ class Scheduler {
   MARL_EXPORT
   const Config& config() const;
 
-#if MARL_ENABLE_DEPRECATED_SCHEDULER_GETTERS_SETTERS
-  MARL_DEPRECATED(139, "use Scheduler::Scheduler(const Config&)")
-  MARL_EXPORT
-  Scheduler(Allocator* allocator = Allocator::Default);
-
-  // setThreadInitializer() sets the worker thread initializer function which
-  // will be called for each new worker thread spawned.
-  // The initializer will only be called on newly created threads (call
-  // setThreadInitializer() before setWorkerThreadCount()).
-  MARL_DEPRECATED(139, "use Config::setWorkerThreadInitializer()")
-  MARL_EXPORT
-  void setThreadInitializer(const std::function<void()>& init);
-
-  // getThreadInitializer() returns the thread initializer function set by
-  // setThreadInitializer().
-  MARL_DEPRECATED(139, "use config().workerThread.initializer")
-  MARL_EXPORT
-  std::function<void()> getThreadInitializer();
-
-  // setWorkerThreadCount() adjusts the number of dedicated worker threads.
-  // A count of 0 puts the scheduler into single-threaded mode.
-  // Note: Currently the number of threads cannot be adjusted once tasks
-  // have been enqueued. This restriction may be lifted at a later time.
-  MARL_DEPRECATED(139, "use Config::setWorkerThreadCount()")
-  MARL_EXPORT
-  void setWorkerThreadCount(int count);
-
-  // getWorkerThreadCount() returns the number of worker threads.
-  MARL_DEPRECATED(139, "use config().workerThread.count")
-  MARL_EXPORT
-  int getWorkerThreadCount();
-#endif  // MARL_ENABLE_DEPRECATED_SCHEDULER_GETTERS_SETTERS
-
   // Fibers expose methods to perform cooperative multitasking and are
   // automatically created by the Scheduler.
   //
@@ -513,12 +480,8 @@ class Scheduler {
   // The scheduler currently bound to the current thread.
   static thread_local Scheduler* bound;
 
-#if MARL_ENABLE_DEPRECATED_SCHEDULER_GETTERS_SETTERS
-  Config cfg;
-  mutex threadInitFuncMutex;
-#else
+  // The immutable configuration used to build the scheduler.
   const Config cfg;
-#endif
 
   std::array<std::atomic<int>, 8> spinningWorkers;
   std::atomic<unsigned int> nextSpinningWorkerIdx = {0x8000000};
