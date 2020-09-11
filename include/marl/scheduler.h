@@ -52,16 +52,29 @@ class Scheduler {
   // Config holds scheduler configuration settings that can be passed to the
   // Scheduler constructor.
   struct Config {
+    static constexpr size_t DefaultFiberStackSize = 1024 * 1024;
+
     // Per-worker-thread settings.
     struct WorkerThread {
+      // Total number of dedicated worker threads to spawn for the scheduler.
       int count = 0;
+
+      // Initializer function to call after thread creation and before any work
+      // is run by the thread.
       ThreadInitializer initializer;
+
+      // Thread affinity policy to use for worker threads.
       std::shared_ptr<Thread::Affinity::Policy> affinityPolicy;
     };
+
     WorkerThread workerThread;
 
     // Memory allocator to use for the scheduler and internal allocations.
     Allocator* allocator = Allocator::Default;
+
+    // Size of each fiber stack. This may be rounded up to the nearest
+    // allocation granularity for the given platform.
+    size_t fiberStackSize = DefaultFiberStackSize;
 
     // allCores() returns a Config with a worker thread for each of the logical
     // cpus available to the process.
@@ -70,6 +83,7 @@ class Scheduler {
 
     // Fluent setters that return this Config so set calls can be chained.
     MARL_NO_EXPORT inline Config& setAllocator(Allocator*);
+    MARL_NO_EXPORT inline Config& setFiberStackSize(size_t);
     MARL_NO_EXPORT inline Config& setWorkerThreadCount(int);
     MARL_NO_EXPORT inline Config& setWorkerThreadInitializer(
         const ThreadInitializer&);
@@ -263,10 +277,6 @@ class Scheduler {
   Scheduler(Scheduler&&) = delete;
   Scheduler& operator=(const Scheduler&) = delete;
   Scheduler& operator=(Scheduler&&) = delete;
-
-  // Stack size in bytes of a new fiber.
-  // TODO: Make configurable so the default size can be reduced.
-  static constexpr size_t FiberStackSize = 1024 * 1024;
 
   // Maximum number of worker threads.
   static constexpr size_t MaxWorkerThreads = 256;
@@ -507,6 +517,11 @@ class Scheduler {
 ////////////////////////////////////////////////////////////////////////////////
 Scheduler::Config& Scheduler::Config::setAllocator(Allocator* alloc) {
   allocator = alloc;
+  return *this;
+}
+
+Scheduler::Config& Scheduler::Config::setFiberStackSize(size_t size) {
+  fiberStackSize = size;
   return *this;
 }
 

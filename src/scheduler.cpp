@@ -702,7 +702,8 @@ void Scheduler::Worker::runUntilIdle() {
 Scheduler::Fiber* Scheduler::Worker::createWorkerFiber() {
   auto fiberId = static_cast<uint32_t>(workerFibers.size() + 1);
   DBG_LOG("%d: CREATE(%d)", (int)id, (int)fiberId);
-  auto fiber = Fiber::create(scheduler->cfg.allocator, fiberId, FiberStackSize,
+  auto fiber = Fiber::create(scheduler->cfg.allocator, fiberId,
+                             scheduler->cfg.fiberStackSize,
                              [&]() REQUIRES(work.mutex) { run(); });
   auto ptr = fiber.get();
   workerFibers.emplace_back(std::move(fiber));
