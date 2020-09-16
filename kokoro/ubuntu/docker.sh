@@ -16,12 +16,12 @@
 
 set -e # Fail on any error.
 
+function show_cmds { set -x; }
+function hide_cmds { { set +x; } 2>/dev/null; }
+
 . /bin/using.sh # Declare the bash `using` function for configuring toolchains.
 
-set -x # Display commands being run.
-
-cd github/marl
-
+echo "Fetching submodules..."
 git submodule update --init
 
 using gcc-9 # Always update gcc so we get a newer standard library.
@@ -29,8 +29,10 @@ using gcc-9 # Always update gcc so we get a newer standard library.
 if [ "$BUILD_SYSTEM" == "cmake" ]; then
     using cmake-3.17.2
 
-    mkdir build
-    cd build
+    SRC_DIR=$(pwd)
+    BUILD_DIR=/tmp/marl-build
+    mkdir ${BUILD_DIR}
+    cd ${BUILD_DIR}
 
     EXTRA_CMAKE_FLAGS=""
 
@@ -60,32 +62,51 @@ if [ "$BUILD_SYSTEM" == "cmake" ]; then
         EXTRA_CMAKE_FLAGS="$EXTRA_CMAKE_FLAGS -DMARL_TSAN=1"
     fi
 
-    cmake .. ${EXTRA_CMAKE_FLAGS} \
-            -DMARL_BUILD_EXAMPLES=1 \
-            -DMARL_BUILD_TESTS=1 \
-            -DMARL_BUILD_BENCHMARKS=1 \
-            -DMARL_WARNINGS_AS_ERRORS=1 \
-            -DMARL_DEBUG_ENABLED=1
+    show_cmds
+        cmake ${SRC_DIR} ${EXTRA_CMAKE_FLAGS} \
+                -DMARL_BUILD_EXAMPLES=1 \
+                -DMARL_BUILD_TESTS=1 \
+                -DMARL_BUILD_BENCHMARKS=1 \
+                -DMARL_WARNINGS_AS_ERRORS=1 \
+                -DMARL_DEBUG_ENABLED=1 \
+                -DMARL_BUILD_SHARED=${BUILD_SHARED}
 
-    make --jobs=$(nproc)
+        make --jobs=$(nproc)
 
-    if [ "$BUILD_TOOLCHAIN" != "ndk" ]; then
-        ./marl-unittests
-        ./fractal
-        ./hello_task
-        ./primes > /dev/null
-        ./tasks_in_tasks
+        if [ "$BUILD_TOOLCHAIN" != "ndk" ]; then
+            ./marl-unittests
+            ./fractal
+            ./hello_task
+            ./primes > /dev/null
+            ./tasks_in_tasks
+        fi
+    hide_cmds
+
+    if [ -n "$BUILD_ARTIFACTS" ]; then
+        ARTIFACTS=()
+        ARTIFACTS+=($(find . -maxdepth 1 -type f   -name "*.a"))
+        ARTIFACTS+=($(find . -maxdepth 1 -type f,l -name "*.so*"))
+        ARTIFACTS+=($(find . -maxdepth 1 -type f   -name "*.dlsym"))
+        ARTIFACTS+=($(find . -maxdepth 1 -type f   -name "*.dll"))
+        for file in "${ARTIFACTS[@]}"; do
+            echo "Copying build artifact ${file}..."
+            cp ${file} $BUILD_ARTIFACTS
+        done
     fi
 
 elif [ "$BUILD_SYSTEM" == "bazel" ]; then
     using bazel-3.1.0
 
-    bazel test //:tests --test_output=all
-    bazel run //examples:fractal
-    bazel run //examples:hello_task
-    bazel run //examples:primes > /dev/null
-    bazel run //examples:tasks_in_tasks
+    show_cmds
+        bazel test //:tests --test_output=all
+        bazel run //examples:fractal
+        bazel run //examples:hello_task
+        bazel run //examples:primes > /dev/null
+        bazel run //examples:tasks_in_tasks
+    hide_cmds
 else
     echo "Unknown build system: $BUILD_SYSTEM"
     exit 1
 fi
+
+echo "*** Done ***"

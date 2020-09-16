@@ -169,7 +169,7 @@ function(marl_set_target_options target)
 
     # Disable specific, pedantic warnings
     if(MSVC)
-        target_compile_options(${target} PRIVATE 
+        target_compile_options(${target} PRIVATE
             "-D_CRT_SECURE_NO_WARNINGS"
             "/wd4127" # conditional expression is constant
             "/wd4324" # structure was padded due to alignment specifier
@@ -208,7 +208,7 @@ endfunction(marl_set_target_options)
 ###########################################################
 
 # marl
-if(MARL_BUILD_SHARED) # Can also be controlled by BUILD_SHARED_LIBS
+if(MARL_BUILD_SHARED OR BUILD_SHARED_LIBS)
     add_library(marl SHARED ${MARL_LIST})
     if(MSVC)
         target_compile_definitions(marl
