@@ -327,6 +327,7 @@ if(MARL_BUILD_BENCHMARKS)
     )
 
     add_executable(marl-benchmarks ${MARL_BENCHMARK_LIST})
+    set_target_properties(${target} PROPERTIES FOLDER "Benchmarks")
 
     marl_set_target_options(marl-benchmarks)
 
@@ -341,9 +342,7 @@ endif(MARL_BUILD_BENCHMARKS)
 if(MARL_BUILD_EXAMPLES)
     function(build_example target)
         add_executable(${target} "${CMAKE_CURRENT_SOURCE_DIR}/examples/${target}.cpp")
-        set_target_properties(${target} PROPERTIES
-            FOLDER "Examples"
-        )
+        set_target_properties(${target} PROPERTIES FOLDER "Examples")
         marl_set_target_options(${target})
         target_link_libraries(${target} PRIVATE marl)
     endfunction(build_example)
