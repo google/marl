@@ -21,7 +21,6 @@ ROOT_DIR="$( cd "${SCRIPT_DIR}/../.." >/dev/null 2>&1 && pwd )"
 
 docker run --rm -i \
   --volume "${ROOT_DIR}:${ROOT_DIR}" \
-  --volume "${KOKORO_ARTIFACTS_DIR}:/mnt/artifacts" \
   --workdir "${ROOT_DIR}" \
   --entrypoint "${SCRIPT_DIR}/presubmit-docker.sh" \
   "gcr.io/shaderc-build/radial-build:latest"
