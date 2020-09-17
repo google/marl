@@ -51,6 +51,7 @@ option_if_not_defined(MARL_MSAN "Build marl with memory sanitizer" OFF)
 option_if_not_defined(MARL_TSAN "Build marl with thread sanitizer" OFF)
 option_if_not_defined(MARL_INSTALL "Create marl install target" OFF)
 option_if_not_defined(MARL_FULL_BENCHMARK "Run benchmarks for [0 .. numLogicalCPUs] with no stepping" OFF)
+option_if_not_defined(MARL_FIBERS_USE_UCONTEXT "Use ucontext instead of assembly for fibers (ignored for platforms that do not support ucontext)" OFF)
 option_if_not_defined(MARL_DEBUG_ENABLED "Enable debug checks even in release builds" OFF)
 
 ###########################################################
@@ -115,9 +116,30 @@ check_cxx_source_compiles(
     MARL_THREAD_SAFETY_ANALYSIS_SUPPORTED)
 set(CMAKE_REQUIRED_FLAGS ${SAVE_CMAKE_REQUIRED_FLAGS})
 
+# Check whether ucontext is supported.
+set(SAVE_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+set(CMAKE_REQUIRED_FLAGS "-Werror")
+check_cxx_source_compiles(
+    "#include <ucontext.h>
+    int main() {
+      ucontext_t ctx;
+      getcontext(&ctx);
+      makecontext(&ctx, nullptr, 2, 1, 2);
+      swapcontext(&ctx, &ctx);
+      return 0;
+    }"
+    MARL_UCONTEXT_SUPPORTED)
+set(CMAKE_REQUIRED_FLAGS ${SAVE_CMAKE_REQUIRED_FLAGS})
+if (MARL_FIBERS_USE_UCONTEXT AND NOT MARL_UCONTEXT_SUPPORTED)
+    # Disable MARL_FIBERS_USE_UCONTEXT and warn if MARL_UCONTEXT_SUPPORTED is 0.
+    message(WARNING "MARL_FIBERS_USE_UCONTEXT is enabled, but ucontext is not supported by the target. Disabling")
+    set(MARL_FIBERS_USE_UCONTEXT 0)
+endif()
+
 if(MARL_IS_SUBPROJECT)
-    # Export MARL_THREAD_SAFETY_ANALYSIS_SUPPORTED as this may be useful to parent projects
+    # Export supported flags as this may be useful to parent projects
     set(MARL_THREAD_SAFETY_ANALYSIS_SUPPORTED PARENT_SCOPE ${MARL_THREAD_SAFETY_ANALYSIS_SUPPORTED})
+    set(MARL_UCONTEXT_SUPPORTED               PARENT_SCOPE ${MARL_UCONTEXT_SUPPORTED})
 endif()
 
 ###########################################################
@@ -196,6 +218,10 @@ function(marl_set_target_options target)
         target_link_libraries(${target} PUBLIC "-fsanitize=thread")
     endif()
 
+    if(MARL_FIBERS_USE_UCONTEXT)
+        target_compile_definitions(${target} PRIVATE "MARL_FIBERS_USE_UCONTEXT=1")
+    endif()
+
     if(MARL_DEBUG_ENABLED)
         target_compile_definitions(${target} PRIVATE "MARL_DEBUG_ENABLED=1")
     endif()
@@ -219,7 +245,6 @@ if(MARL_BUILD_SHARED OR BUILD_SHARED_LIBS)
 else()
     add_library(marl ${MARL_LIST})
 endif()
-
 
 if(NOT MSVC)
     # Public API symbols are made visible with the MARL_EXPORT annotation.
