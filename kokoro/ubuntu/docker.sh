@@ -31,56 +31,71 @@ if [ "$BUILD_SYSTEM" == "cmake" ]; then
 
     SRC_DIR=$(pwd)
     BUILD_DIR=/tmp/marl-build
-    mkdir ${BUILD_DIR}
-    cd ${BUILD_DIR}
 
-    EXTRA_CMAKE_FLAGS=""
+    COMMON_CMAKE_FLAGS=""
+    COMMON_CMAKE_FLAGS+=" -DMARL_BUILD_EXAMPLES=1"
+    COMMON_CMAKE_FLAGS+=" -DMARL_BUILD_TESTS=1"
+    COMMON_CMAKE_FLAGS+=" -DMARL_BUILD_BENCHMARKS=1"
+    COMMON_CMAKE_FLAGS+=" -DMARL_WARNINGS_AS_ERRORS=1"
+    COMMON_CMAKE_FLAGS+=" -DMARL_DEBUG_ENABLED=1"
+    COMMON_CMAKE_FLAGS+=" -DMARL_BUILD_SHARED=${BUILD_SHARED}"
 
     if [ "$BUILD_TOOLCHAIN" == "ndk" ]; then
         using ndk-r21d
-        EXTRA_CMAKE_FLAGS="$EXTRA_CMAKE_FLAGS \
-                          -DANDROID_ABI=$BUILD_TARGET_ARCH \
-                          -DANDROID_NATIVE_API_LEVEL=18 \
-                          -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake"
+        COMMON_CMAKE_FLAGS+=" -DANDROID_ABI=$BUILD_TARGET_ARCH"
+        COMMON_CMAKE_FLAGS+=" -DANDROID_NATIVE_API_LEVEL=18"
+        COMMON_CMAKE_FLAGS+=" -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake"
     else # !ndk
         if [ "$BUILD_TOOLCHAIN" == "clang" ]; then
             using clang-10.0.0
         fi
         if [ "$BUILD_TARGET_ARCH" == "x86" ]; then
-            EXTRA_CMAKE_FLAGS="$EXTRA_CMAKE_FLAGS    \
-                              -DCMAKE_CXX_FLAGS=-m32 \
-                              -DCMAKE_C_FLAGS=-m32   \
-                              -DCMAKE_ASM_FLAGS=-m32"
+            COMMON_CMAKE_FLAGS+=" -DCMAKE_CXX_FLAGS=-m32"
+            COMMON_CMAKE_FLAGS+=" -DCMAKE_C_FLAGS=-m32"
+            COMMON_CMAKE_FLAGS+=" -DCMAKE_ASM_FLAGS=-m32"
         fi
     fi
 
     if [ "$BUILD_SANITIZER" == "asan" ]; then
-        EXTRA_CMAKE_FLAGS="$EXTRA_CMAKE_FLAGS -DMARL_ASAN=1"
+        COMMON_CMAKE_FLAGS+=" -DMARL_ASAN=1"
     elif [ "$BUILD_SANITIZER" == "msan" ]; then
-        EXTRA_CMAKE_FLAGS="$EXTRA_CMAKE_FLAGS -DMARL_MSAN=1"
+        COMMON_CMAKE_FLAGS+=" -DMARL_MSAN=1"
     elif [ "$BUILD_SANITIZER" == "tsan" ]; then
-        EXTRA_CMAKE_FLAGS="$EXTRA_CMAKE_FLAGS -DMARL_TSAN=1"
+        COMMON_CMAKE_FLAGS+=" -DMARL_TSAN=1"
     fi
 
-    show_cmds
-        cmake ${SRC_DIR} ${EXTRA_CMAKE_FLAGS} \
-                -DMARL_BUILD_EXAMPLES=1 \
-                -DMARL_BUILD_TESTS=1 \
-                -DMARL_BUILD_BENCHMARKS=1 \
-                -DMARL_WARNINGS_AS_ERRORS=1 \
-                -DMARL_DEBUG_ENABLED=1 \
-                -DMARL_BUILD_SHARED=${BUILD_SHARED}
+    function buildAndTest {
+        DESCRIPTION=$1
+        CMAKE_FLAGS=$2
 
-        make --jobs=$(nproc)
+        echo "Building ${DESCRIPTION}..."
 
-        if [ "$BUILD_TOOLCHAIN" != "ndk" ]; then
-            ./marl-unittests
-            ./fractal
-            ./hello_task
-            ./primes > /dev/null
-            ./tasks_in_tasks
+        # Ensure BUILD_DIR is empty.
+        if [ -d ${BUILD_DIR} ]; then
+            rm -fr ${BUILD_DIR}
         fi
-    hide_cmds
+        mkdir ${BUILD_DIR}
+        cd ${BUILD_DIR}
+
+        show_cmds
+            cmake ${SRC_DIR} ${CMAKE_FLAGS} ${COMMON_CMAKE_FLAGS}
+
+            make --jobs=$(nproc)
+
+            echo "Testing ${DESCRIPTION}..."
+
+            if [ "$BUILD_TOOLCHAIN" != "ndk" ]; then
+                ./marl-unittests
+                ./fractal
+                ./hello_task
+                ./primes > /dev/null
+                ./tasks_in_tasks
+            fi
+        hide_cmds
+    }
+
+    buildAndTest "marl with ucontext fibers" "-DMARL_FIBERS_USE_UCONTEXT=1"
+    buildAndTest "marl with assembly fibers" "-DMARL_FIBERS_USE_UCONTEXT=0"
 
     if [ -n "$BUILD_ARTIFACTS" ]; then
         ARTIFACTS=()
