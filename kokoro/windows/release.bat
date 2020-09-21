@@ -41,8 +41,8 @@ cmake "%ROOT_DIR%" ^
     "-DMARL_BUILD_BENCHMARKS=1" ^
     "-DMARL_WARNINGS_AS_ERRORS=1" ^
     "-DMARL_DEBUG_ENABLED=1" ^
-    "-DMARL_INSTALL=1" \
-    "-DBENCHMARK_ENABLE_INSTALL=0" \
+    "-DMARL_INSTALL=1" ^
+    "-DBENCHMARK_ENABLE_INSTALL=0" ^
     "-DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%"
 if !ERRORLEVEL! neq 0 exit !ERRORLEVEL!
 cmake --build . --config %CONFIG% --target install
