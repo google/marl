@@ -14,20 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e # Fail on any error.
-
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd )"
 ROOT_DIR="$( cd "${SCRIPT_DIR}/../.." >/dev/null 2>&1 && pwd )"
+BUILD_ARTIFACTS=${KOKORO_ARTIFACTS_DIR}
 
-docker run --rm -i \
-  --volume "${ROOT_DIR}:${ROOT_DIR}" \
-  --workdir "${ROOT_DIR}" \
-  --env BUILD_SYSTEM=${BUILD_SYSTEM} \
-  --env BUILD_TOOLCHAIN=${BUILD_TOOLCHAIN} \
-  --env BUILD_TYPE=${BUILD_SHARED:-Debug} \
-  --env BUILD_TARGET_ARCH=${BUILD_TARGET_ARCH} \
-  --env BUILD_SHARED=${BUILD_SHARED:-0} \
-  --env BUILD_SANITIZER=${BUILD_SANITIZER} \
-  --env RUN_TESTS=1 \
-  --entrypoint "${SCRIPT_DIR}/docker.sh" \
-  "gcr.io/shaderc-build/radial-build:latest"
+. "${SCRIPT_DIR}/build.sh"

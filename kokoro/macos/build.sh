@@ -16,6 +16,8 @@
 
 set -e # Fail on any error.
 
+cd "${ROOT_DIR}"
+
 function show_cmds { set -x; }
 function hide_cmds { { set +x; } 2>/dev/null; }
 function status {
@@ -26,17 +28,12 @@ function status {
     echo ""
 }
 
-. /bin/using.sh # Declare the bash `using` function for configuring toolchains.
-
 status "Fetching submodules"
 git submodule update --init
 
 status "Setting up environment"
-using gcc-9 # Always update gcc so we get a newer standard library.
 
 if [ "$BUILD_SYSTEM" == "cmake" ]; then
-    using cmake-3.17.2
-
     SRC_DIR=$(pwd)
     BUILD_DIR=/tmp/marl-build
     INSTALL_DIR=${BUILD_DIR}/install
@@ -52,22 +49,6 @@ if [ "$BUILD_SYSTEM" == "cmake" ]; then
     COMMON_CMAKE_FLAGS+=" -DBENCHMARK_ENABLE_INSTALL=0"
     COMMON_CMAKE_FLAGS+=" -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"
 
-    if [ "$BUILD_TOOLCHAIN" == "ndk" ]; then
-        using ndk-r21d
-        COMMON_CMAKE_FLAGS+=" -DANDROID_ABI=$BUILD_TARGET_ARCH"
-        COMMON_CMAKE_FLAGS+=" -DANDROID_NATIVE_API_LEVEL=18"
-        COMMON_CMAKE_FLAGS+=" -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake"
-    else # !ndk
-        if [ "$BUILD_TOOLCHAIN" == "clang" ]; then
-            using clang-10.0.0
-        fi
-        if [ "$BUILD_TARGET_ARCH" == "x86" ]; then
-            COMMON_CMAKE_FLAGS+=" -DCMAKE_CXX_FLAGS=-m32"
-            COMMON_CMAKE_FLAGS+=" -DCMAKE_C_FLAGS=-m32"
-            COMMON_CMAKE_FLAGS+=" -DCMAKE_ASM_FLAGS=-m32"
-        fi
-    fi
-
     if [ "$BUILD_SANITIZER" == "asan" ]; then
         COMMON_CMAKE_FLAGS+=" -DMARL_ASAN=1"
     elif [ "$BUILD_SANITIZER" == "msan" ]; then
@@ -75,7 +56,6 @@ if [ "$BUILD_SYSTEM" == "cmake" ]; then
     elif [ "$BUILD_SANITIZER" == "tsan" ]; then
         COMMON_CMAKE_FLAGS+=" -DMARL_TSAN=1"
     fi
-
 
     # clean
     # Ensures BUILD_DIR is empty.
@@ -97,7 +77,7 @@ if [ "$BUILD_SYSTEM" == "cmake" ]; then
         cd ${BUILD_DIR}
         show_cmds
             cmake ${SRC_DIR} ${CMAKE_FLAGS} ${COMMON_CMAKE_FLAGS}
-            make --jobs=$(nproc)
+            make --jobs=$(sysctl -n hw.logicalcpu)
         hide_cmds
     }
 
@@ -152,8 +132,7 @@ if [ "$BUILD_SYSTEM" == "cmake" ]; then
     }
 
     if [ -n "$RUN_TESTS" ]; then
-        buildAndTest "marl with ucontext fibers" "-DMARL_FIBERS_USE_UCONTEXT=1"
-        buildAndTest "marl with assembly fibers" "-DMARL_FIBERS_USE_UCONTEXT=0"
+        buildAndTest "marl for test" ""
     fi
 
     buildAndInstall "marl for install" "-DMARL_INSTALL=1"
@@ -166,14 +145,20 @@ if [ "$BUILD_SYSTEM" == "cmake" ]; then
     fi
 
 elif [ "$BUILD_SYSTEM" == "bazel" ]; then
-    using bazel-3.1.0
+    # Get bazel
+    BAZEL_DIR="${ROOT_DIR}/bazel"
+    curl -L -k -O -s https://github.com/bazelbuild/bazel/releases/download/0.29.1/bazel-0.29.1-installer-darwin-x86_64.sh
+    mkdir "${BAZEL_DIR}"
+    sh bazel-0.29.1-installer-darwin-x86_64.sh --prefix="${BAZEL_DIR}"
+    rm bazel-0.29.1-installer-darwin-x86_64.sh
+    BAZEL="${BAZEL_DIR}/bin/bazel"
 
     show_cmds
-        bazel test //:tests --test_output=all
-        bazel run //examples:fractal
-        bazel run //examples:hello_task
-        bazel run //examples:primes > /dev/null
-        bazel run //examples:tasks_in_tasks
+        "${BAZEL}" test //:tests --test_output=all
+        "${BAZEL}" run //examples:fractal
+        "${BAZEL}" run //examples:hello_task
+        "${BAZEL}" run //examples:primes > /dev/null
+        "${BAZEL}" run //examples:tasks_in_tasks
     hide_cmds
 else
     status "Unknown build system: $BUILD_SYSTEM"
