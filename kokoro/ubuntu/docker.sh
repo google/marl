@@ -161,7 +161,7 @@ if [ "$BUILD_SYSTEM" == "cmake" ]; then
     if [ -n "$BUILD_ARTIFACTS" ]; then
         status "Copying build artifacts"
         show_cmds
-            tar -czvf "$INSTALL_DIR/build.tar.gz" -C "$BUILD_ARTIFACTS" .
+            tar -czvf "$BUILD_ARTIFACTS/build.tar.gz" -C "$INSTALL_DIR" .
         hide_cmds
     fi
 
