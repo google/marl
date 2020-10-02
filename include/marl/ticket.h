@@ -148,7 +148,7 @@ template <typename Function>
 void Ticket::onCall(Function&& f) const {
   marl::lock lock(record->shared->mutex);
   if (record->isCalled) {
-    marl::schedule(std::move(f));
+    marl::schedule(std::forward<Function>(f));
     return;
   }
   if (record->onCall) {
@@ -159,9 +159,10 @@ void Ticket::onCall(Function&& f) const {
       }
       OnCall a, b;
     };
-    record->onCall = std::move(Joined{std::move(record->onCall), std::move(f)});
+    record->onCall =
+        std::move(Joined{std::move(record->onCall), std::forward<Function>(f)});
   } else {
-    record->onCall = std::move(f);
+    record->onCall = std::forward<Function>(f);
   }
 }
 
