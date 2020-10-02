@@ -77,13 +77,13 @@ FinallyImpl<F>::~FinallyImpl() {
 }
 
 template <typename F>
-MARL_NO_EXPORT inline FinallyImpl<F> make_finally(F&& f) {
-  return FinallyImpl<F>(std::move(f));
+inline FinallyImpl<F> make_finally(F&& f) {
+  return FinallyImpl<F>(std::forward<F>(f));
 }
 
 template <typename F>
-MARL_NO_EXPORT inline std::shared_ptr<Finally> make_shared_finally(F&& f) {
-  return std::make_shared<FinallyImpl<F>>(std::move(f));
+inline std::shared_ptr<Finally> make_shared_finally(F&& f) {
+  return std::make_shared<FinallyImpl<F>>(std::forward<F>(f));
 }
 
 }  // namespace marl
