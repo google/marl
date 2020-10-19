@@ -237,10 +237,16 @@ void Scheduler::Fiber::notify() {
 }
 
 void Scheduler::Fiber::wait(marl::lock& lock, const Predicate& pred) {
+  MARL_ASSERT(worker == Worker::getCurrent(),
+              "Scheduler::Fiber::wait() must only be called on the currently "
+              "executing fiber");
   worker->wait(lock, nullptr, pred);
 }
 
 void Scheduler::Fiber::switchTo(Fiber* to) {
+  MARL_ASSERT(worker == Worker::getCurrent(),
+              "Scheduler::Fiber::switchTo() must only be called on the "
+              "currently executing fiber");
   if (to != this) {
     impl->switchTo(to->impl.get());
   }
