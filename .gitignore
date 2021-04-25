@@ -4,3 +4,5 @@
 /out/
 bazel-*
 CMakeSettings.json
+/cmake-build-debug/
+/.idea/
