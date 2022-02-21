@@ -123,9 +123,9 @@ add_subdirectory(${MARL_DIR})
 
 ### Usage Recommendations
 
-#### Capture marl synchronization primitves by value
+#### Capture marl synchronization primitives by value
 
-All marl synchronization primitves aside from `marl::ConditionVariable` should be lambda-captured by **value**:
+All marl synchronization primitives aside from `marl::ConditionVariable` should be lambda-captured by **value**:
 
 ```c++
 marl::Event event;
