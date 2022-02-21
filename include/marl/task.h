@@ -17,14 +17,14 @@
 
 #include "export.h"
 
-#include <functional>
+#include <future>
 
 namespace marl {
 
 // Task is a unit of work for the scheduler.
 class Task {
  public:
-  using Function = std::function<void()>;
+  using Function = std::packaged_task<void()>;
 
   enum class Flags {
     None = 0,
@@ -37,21 +37,17 @@ class Task {
   };
 
   MARL_NO_EXPORT inline Task();
-  MARL_NO_EXPORT inline Task(const Task&);
+  MARL_NO_EXPORT inline Task(const Task&) = delete;
   MARL_NO_EXPORT inline Task(Task&&);
-  MARL_NO_EXPORT inline Task(const Function& function,
-                             Flags flags = Flags::None);
-  MARL_NO_EXPORT inline Task(Function&& function, Flags flags = Flags::None);
-  MARL_NO_EXPORT inline Task& operator=(const Task&);
+  template <typename F>
+  MARL_NO_EXPORT inline Task(F&& function, Flags flags = Flags::None);
+  MARL_NO_EXPORT inline Task& operator=(const Task&) = delete;
   MARL_NO_EXPORT inline Task& operator=(Task&&);
-  MARL_NO_EXPORT inline Task& operator=(const Function&);
+  MARL_NO_EXPORT inline Task& operator=(const Function&) = delete;
   MARL_NO_EXPORT inline Task& operator=(Function&&);
 
-  // operator bool() returns true if the Task has a valid function.
-  MARL_NO_EXPORT inline operator bool() const;
-
   // operator()() runs the task.
-  MARL_NO_EXPORT inline void operator()() const;
+  MARL_NO_EXPORT inline void operator()();
 
   // is() returns true if the Task was created with the given flag.
   MARL_NO_EXPORT inline bool is(Flags flag) const;
@@ -62,38 +58,23 @@ class Task {
 };
 
 Task::Task() {}
-Task::Task(const Task& o) : function(o.function), flags(o.flags) {}
 Task::Task(Task&& o) : function(std::move(o.function)), flags(o.flags) {}
-Task::Task(const Function& function_, Flags flags_ /* = Flags::None */)
-    : function(function_), flags(flags_) {}
-Task::Task(Function&& function_, Flags flags_ /* = Flags::None */)
-    : function(std::move(function_)), flags(flags_) {}
-Task& Task::operator=(const Task& o) {
-  function = o.function;
-  flags = o.flags;
-  return *this;
-}
+template <typename F>
+Task::Task(F&& fn, Flags flags_ /* = Flags::None */)
+    : function(std::forward<F>(fn)), flags(flags_) {}
 Task& Task::operator=(Task&& o) {
   function = std::move(o.function);
   flags = o.flags;
   return *this;
 }
 
-Task& Task::operator=(const Function& f) {
-  function = f;
-  flags = Flags::None;
-  return *this;
-}
 Task& Task::operator=(Function&& f) {
   function = std::move(f);
   flags = Flags::None;
   return *this;
 }
-Task::operator bool() const {
-  return function.operator bool();
-}
 
-void Task::operator()() const {
+void Task::operator()() {
   function();
 }
 
