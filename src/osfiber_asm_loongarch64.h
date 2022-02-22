@@ -39,6 +39,8 @@
 
 #include <stdint.h>
 
+// Procedure Call Standard for the LoongArch 64-bit Architecture
+// https://loongson.github.io/LoongArch-Documentation/LoongArch-ELF-ABI-EN.html
 struct marl_fiber_context {
   // paramater registers (First two)
   uintptr_t a0;

@@ -51,35 +51,33 @@ marl_fiber_swap:
 	st.d $sp, $a0, MARL_REG_sp
 	st.d $fp, $a0, MARL_REG_fp
 
-	move $t0, $a1 // Store a1 in temporary register
-
 	// Recover callee-preserved registers
-	ld.d $s0, $t0, MARL_REG_s0
-	ld.d $s1, $t0, MARL_REG_s1
-	ld.d $s2, $t0, MARL_REG_s2
-	ld.d $s3, $t0, MARL_REG_s3
-	ld.d $s4, $t0, MARL_REG_s4
-	ld.d $s5, $t0, MARL_REG_s5
-	ld.d $s6, $t0, MARL_REG_s6
-	ld.d $s7, $t0, MARL_REG_s7
-	ld.d $s8, $t0, MARL_REG_s8
+	ld.d $s0, $a1, MARL_REG_s0
+	ld.d $s1, $a1, MARL_REG_s1
+	ld.d $s2, $a1, MARL_REG_s2
+	ld.d $s3, $a1, MARL_REG_s3
+	ld.d $s4, $a1, MARL_REG_s4
+	ld.d $s5, $a1, MARL_REG_s5
+	ld.d $s6, $a1, MARL_REG_s6
+	ld.d $s7, $a1, MARL_REG_s7
+	ld.d $s8, $a1, MARL_REG_s8
 
-	fld.d $fs0, $t0, MARL_REG_fs0
-	fld.d $fs1, $t0, MARL_REG_fs1
-	fld.d $fs2, $t0, MARL_REG_fs2
-	fld.d $fs3, $t0, MARL_REG_fs3
-	fld.d $fs4, $t0, MARL_REG_fs4
-	fld.d $fs5, $t0, MARL_REG_fs5
-	fld.d $fs6, $t0, MARL_REG_fs6
-	fld.d $fs7, $t0, MARL_REG_fs7
+	fld.d $fs0, $a1, MARL_REG_fs0
+	fld.d $fs1, $a1, MARL_REG_fs1
+	fld.d $fs2, $a1, MARL_REG_fs2
+	fld.d $fs3, $a1, MARL_REG_fs3
+	fld.d $fs4, $a1, MARL_REG_fs4
+	fld.d $fs5, $a1, MARL_REG_fs5
+	fld.d $fs6, $a1, MARL_REG_fs6
+	fld.d $fs7, $a1, MARL_REG_fs7
 
-	ld.d $ra, $t0, MARL_REG_ra
-	ld.d $sp, $t0, MARL_REG_sp
-	ld.d $fp, $t0, MARL_REG_fp
+	ld.d $ra, $a1, MARL_REG_ra
+	ld.d $sp, $a1, MARL_REG_sp
+	ld.d $fp, $a1, MARL_REG_fp
 
 	// Recover arguments
-	ld.d $a0, $t0, MARL_REG_a0
-	ld.d $a1, $t0, MARL_REG_a1
+	ld.d $a0, $a1, MARL_REG_a0
+	ld.d $a1, $a1, MARL_REG_a1
 
 	jr	$ra // Jump to the trampoline
 
