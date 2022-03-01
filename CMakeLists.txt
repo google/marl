@@ -243,7 +243,7 @@ function(marl_set_target_options target)
         target_compile_definitions(${target} PRIVATE "MARL_DEBUG_ENABLED=1")
     endif()
 
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "rv*")
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^rv.*")
         target_link_libraries(${target} INTERFACE atomic) #explicitly use -latomic for RISC-V linking
     endif()
 
