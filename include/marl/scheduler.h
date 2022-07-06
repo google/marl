@@ -104,10 +104,6 @@ class Scheduler {
   MARL_EXPORT
   static Scheduler* get();
 
-  // setBound() sets the scheduler bound to the current thread.
-  MARL_EXPORT
-  static void setBound(Scheduler* scheduler);
-
   // bind() binds this scheduler to the current thread.
   // There must be no existing scheduler bound to the thread prior to calling.
   MARL_EXPORT
@@ -490,6 +486,9 @@ class Scheduler {
   // The scheduler will prioritize this worker for new tasks to try to prevent
   // it going to sleep.
   void onBeginSpinning(int workerId);
+
+  // setBound() sets the scheduler bound to the current thread.
+  static void setBound(Scheduler* scheduler);
 
   // The scheduler currently bound to the current thread.
   static thread_local Scheduler* bound;
