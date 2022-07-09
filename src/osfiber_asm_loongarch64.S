@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if defined(__loongarch__) && _LOONGARCH_SIM == _ABILP64
+#if defined(__loongarch_lp64)
 
 #define MARL_BUILD_ASM 1
 #include "osfiber_asm_loongarch64.h"
@@ -81,4 +81,4 @@ marl_fiber_swap:
 
     jr $ra // Jump to the trampoline
 
-#endif // defined(__loongarch__) && _LOONGARCH_SIM == _ABILP64
+#endif // defined(__loongarch_lp64)
