@@ -81,7 +81,7 @@
 // The MSAN_UNPOISON macro marks uninitialized memory as initialized for MSAN.
 // It can be used to suppress false-positive MSAN errors before reading
 // thread-local variables. See https://github.com/google/sanitizers/issues/1265
-#ifdef __clang__
+#if MEMORY_SANITIZER_ENABLED
 #include <sanitizer/msan_interface.h>
 #define MSAN_UNPOISON(p, size) __msan_unpoison(p, size)
 #else
