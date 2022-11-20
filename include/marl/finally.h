@@ -58,10 +58,10 @@ class FinallyImpl : public Finally {
 };
 
 template <typename F>
-FinallyImpl<F>::FinallyImpl(const F& func) : func(func) {}
+FinallyImpl<F>::FinallyImpl(const F& func_) : func(func_) {}
 
 template <typename F>
-FinallyImpl<F>::FinallyImpl(F&& func) : func(std::move(func)) {}
+FinallyImpl<F>::FinallyImpl(F&& func_) : func(std::move(func_)) {}
 
 template <typename F>
 FinallyImpl<F>::FinallyImpl(FinallyImpl<F>&& other)
