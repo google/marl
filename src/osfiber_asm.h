@@ -38,6 +38,8 @@
 #include "osfiber_asm_rv64.h"
 #elif defined(__loongarch__) && _LOONGARCH_SIM == _ABILP64
 #include "osfiber_asm_loongarch64.h"
+#elif defined(__EMSCRIPTEN__)
+#include "osfiber_emscripten.h"
 #else
 #error "Unsupported target"
 #endif

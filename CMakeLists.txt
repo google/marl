@@ -171,6 +171,7 @@ if(NOT MSVC)
         ${MARL_SRC_DIR}/osfiber_rv64.c
         ${MARL_SRC_DIR}/osfiber_x64.c
         ${MARL_SRC_DIR}/osfiber_x86.c
+        ${MARL_SRC_DIR}/osfiber_emscripten.cpp
     )
     # CMAKE_OSX_ARCHITECTURES settings aren't propagated to assembly files when
     # building for Apple platforms (https://gitlab.kitware.com/cmake/cmake/-/issues/20771),
