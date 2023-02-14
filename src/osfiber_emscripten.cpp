@@ -21,12 +21,17 @@
 
 extern "C" {
 
-static marl_fiber_context main_fiber;
-static marl_fiber_context* running_fiber = nullptr;
-
 MARL_EXPORT
 void marl_fiber_trampoline(void (*target)(void*), void* arg) {
   target(arg);
+}
+
+MARL_EXPORT
+void marl_main_fiber_init(marl_fiber_context* ctx) {
+  emscripten_fiber_init_from_current_context(
+          &ctx->context,
+          ctx->asyncify_stack.data(),
+          ctx->asyncify_stack.size());
 }
 
 MARL_EXPORT
@@ -35,15 +40,6 @@ void marl_fiber_set_target(marl_fiber_context* ctx,
                            uint32_t stack_size,
                            void (*target)(void*),
                            void* arg) {
-
-  if(running_fiber == nullptr) {
-    emscripten_fiber_init_from_current_context(
-          &main_fiber.context,
-          main_fiber.asyncify_stack.data(),
-          main_fiber.asyncify_stack.size());
-
-    running_fiber = &main_fiber;
-  }
 
   emscripten_fiber_init(
           &ctx->context,
@@ -58,7 +54,6 @@ void marl_fiber_set_target(marl_fiber_context* ctx,
 MARL_EXPORT
 extern void marl_fiber_swap(marl_fiber_context* from,
                             const marl_fiber_context* to) {
-
   emscripten_fiber_swap(&from->context, const_cast<emscripten_fiber_t*>(&to->context));
 }
 }
