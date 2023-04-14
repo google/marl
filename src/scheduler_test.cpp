@@ -108,6 +108,36 @@ TEST_P(WithBoundScheduler, ScheduleWithArgs) {
   ASSERT_EQ(got, "s: 'a string', i: 42, b: true");
 }
 
+TEST_P(WithBoundScheduler, ScheduleWithMovedCapture) {
+#if __cplusplus >= 201402L  // C++14 or greater
+  std::unique_ptr<std::string> move_me(new std::string("move me"));
+  std::string got;
+  marl::WaitGroup wg(1);
+  marl::schedule([moved = std::move(move_me), wg, &got]() {
+    got = *moved;
+    wg.done();
+  });
+  wg.wait();
+  ASSERT_EQ(got, "move me");
+#else
+  GTEST_SKIP() << "Test requires c++14 or greater";
+#endif
+}
+
+TEST_P(WithBoundScheduler, ScheduleWithMovedArg) {
+  std::unique_ptr<std::string> move_me(new std::string("move me"));
+  std::string got;
+  marl::WaitGroup wg(1);
+  marl::schedule(
+      [wg, &got](std::unique_ptr<std::string>& str) {
+        got = *str;
+        wg.done();
+      },
+      std::move(move_me));
+  wg.wait();
+  ASSERT_EQ(got, "move me");
+}
+
 TEST_P(WithBoundScheduler, FibersResumeOnSameThread) {
   marl::WaitGroup fence(1);
   marl::WaitGroup wg(1000);
