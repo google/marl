@@ -16,15 +16,14 @@
 #define marl_task_h
 
 #include "export.h"
-
-#include <functional>
+#include "move_only_function.h"
 
 namespace marl {
 
 // Task is a unit of work for the scheduler.
 class Task {
  public:
-  using Function = std::function<void()>;
+  using Function = move_only_function<void()>;
 
   enum class Flags {
     None = 0,
@@ -37,14 +36,9 @@ class Task {
   };
 
   MARL_NO_EXPORT inline Task();
-  MARL_NO_EXPORT inline Task(const Task&);
   MARL_NO_EXPORT inline Task(Task&&);
-  MARL_NO_EXPORT inline Task(const Function& function,
-                             Flags flags = Flags::None);
   MARL_NO_EXPORT inline Task(Function&& function, Flags flags = Flags::None);
-  MARL_NO_EXPORT inline Task& operator=(const Task&);
   MARL_NO_EXPORT inline Task& operator=(Task&&);
-  MARL_NO_EXPORT inline Task& operator=(const Function&);
   MARL_NO_EXPORT inline Task& operator=(Function&&);
 
   // operator bool() returns true if the Task has a valid function.
@@ -62,28 +56,15 @@ class Task {
 };
 
 Task::Task() {}
-Task::Task(const Task& o) : function(o.function), flags(o.flags) {}
 Task::Task(Task&& o) : function(std::move(o.function)), flags(o.flags) {}
-Task::Task(const Function& function_, Flags flags_ /* = Flags::None */)
-    : function(function_), flags(flags_) {}
 Task::Task(Function&& function_, Flags flags_ /* = Flags::None */)
     : function(std::move(function_)), flags(flags_) {}
-Task& Task::operator=(const Task& o) {
-  function = o.function;
-  flags = o.flags;
-  return *this;
-}
 Task& Task::operator=(Task&& o) {
   function = std::move(o.function);
   flags = o.flags;
   return *this;
 }
 
-Task& Task::operator=(const Function& f) {
-  function = f;
-  flags = Flags::None;
-  return *this;
-}
 Task& Task::operator=(Function&& f) {
   function = std::move(f);
   flags = Flags::None;
