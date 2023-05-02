@@ -117,6 +117,10 @@ const ProcessorGroups& getProcessorGroups() {
 
 Thread::Affinity::Affinity(Allocator* allocator) : cores(allocator) {}
 Thread::Affinity::Affinity(Affinity&& other) : cores(std::move(other.cores)) {}
+Thread::Affinity& Thread::Affinity::operator=(Affinity&& other) {
+  cores = std::move(other.cores);
+  return *this;
+}
 Thread::Affinity::Affinity(const Affinity& other, Allocator* allocator)
     : cores(other.cores, allocator) {}
 

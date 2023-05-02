@@ -93,6 +93,8 @@ class Thread {
 
     MARL_EXPORT Affinity(Affinity&&);
 
+    MARL_EXPORT Affinity& operator=(Affinity&&);
+
     MARL_EXPORT Affinity(const Affinity&, Allocator* allocator);
 
     // all() returns an Affinity with all the cores available to the process.
