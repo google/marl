@@ -43,8 +43,8 @@ class Thread {
     };
 
     // Comparison functions
-    MARL_NO_EXPORT inline bool operator==(const Core&) const;
-    MARL_NO_EXPORT inline bool operator<(const Core&) const;
+    MARL_NO_EXPORT inline bool operator==(Core) const;
+    MARL_NO_EXPORT inline bool operator<(Core) const;
   };
 
   // Affinity holds the affinity mask for a thread - a description of what cores
@@ -157,11 +157,11 @@ class Thread {
 // Thread::Core
 ////////////////////////////////////////////////////////////////////////////////
 // Comparison functions
-bool Thread::Core::operator==(const Core& other) const {
+bool Thread::Core::operator==(Core other) const {
   return pthread.index == other.pthread.index;
 }
 
-bool Thread::Core::operator<(const Core& other) const {
+bool Thread::Core::operator<(Core other) const {
   return pthread.index < other.pthread.index;
 }
 
