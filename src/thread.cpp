@@ -50,7 +50,7 @@
 namespace {
 
 struct CoreHasher {
-  inline uint64_t operator()(const marl::Thread::Core& core) const {
+  inline uint64_t operator()(marl::Thread::Core core) const {
     return core.pthread.index;
   }
 };
