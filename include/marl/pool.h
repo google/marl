@@ -214,6 +214,7 @@ class BoundedPool : public Pool<T> {
   // returned if the pool is empty.
   template <typename... Args>
   MARL_NO_EXPORT inline Loan borrow(Args&&... args) const {
+    static_assert((sizeof...(Args) == 0) || (POLICY != PoolPolicy::Preserve), "Arguments not supported with Preserve policy!");
     marl::lock lock(storage->mutex);    
     storage->returned.wait(lock, [&] { return storage->free != nullptr; });
     auto item = storage->free;
