@@ -219,7 +219,7 @@ class BoundedPool : public Pool<T> {
     storage->returned.wait(lock, [&] { return storage->free != nullptr; });
     auto item = storage->free;
     storage->free = storage->free->next;
-    if constexpr (POLICY == PoolPolicy::Reconstruct) {
+    if (POLICY == PoolPolicy::Reconstruct) {
       item->construct(std::forward<Args>(args)...);
     }
     return Loan(item, storage);
@@ -236,7 +236,7 @@ class BoundedPool : public Pool<T> {
       storage->returned.wait(lock, [&] { return storage->free != nullptr; });
       auto item = storage->free;
       storage->free = storage->free->next;
-      if constexpr (POLICY == PoolPolicy::Reconstruct) {
+      if (POLICY == PoolPolicy::Reconstruct) {
         item->construct(std::forward<Args>(args)...);
       }
       f(std::move(Loan(item, storage)));
@@ -259,7 +259,7 @@ class BoundedPool : public Pool<T> {
       storage->free = storage->free->next;
       item->pool = this;
     }
-    if constexpr (POLICY == PoolPolicy::Reconstruct) {
+    if (POLICY == PoolPolicy::Reconstruct) {
       item->construct(std::forward<Args>(args)...);
     }
     return std::make_pair(Loan(item, storage), true);
@@ -284,7 +284,7 @@ template <typename T, int N, PoolPolicy POLICY>
 BoundedPool<T, N, POLICY>::Storage::Storage(Allocator* allocator)
     : returned(allocator) {
   for (int i = 0; i < N; i++) {
-    if constexpr (POLICY == PoolPolicy::Preserve) {
+    if (POLICY == PoolPolicy::Preserve) {
       items[i].construct();
     }
     items[i].next = this->free;
@@ -294,7 +294,7 @@ BoundedPool<T, N, POLICY>::Storage::Storage(Allocator* allocator)
 
 template <typename T, int N, PoolPolicy POLICY>
 BoundedPool<T, N, POLICY>::Storage::~Storage() {
-  if constexpr (POLICY == PoolPolicy::Preserve) {
+  if (POLICY == PoolPolicy::Preserve) {
     for (int i = 0; i < N; i++) {
       items[i].destruct();
     }
@@ -308,7 +308,7 @@ BoundedPool<T, N, POLICY>::BoundedPool(
 
 template <typename T, int N, PoolPolicy POLICY>
 void BoundedPool<T, N, POLICY>::Storage::return_(Item* item) {
-  if constexpr (POLICY == PoolPolicy::Reconstruct) {
+  if (POLICY == PoolPolicy::Reconstruct) {
     item->destruct();
   }
   {
@@ -373,7 +373,7 @@ UnboundedPool<T, POLICY>::Storage::Storage(Allocator* allocator)
 template <typename T, PoolPolicy POLICY>
 UnboundedPool<T, POLICY>::Storage::~Storage() {
   for (auto item : items) {
-    if constexpr (POLICY == PoolPolicy::Preserve) {
+    if (POLICY == PoolPolicy::Preserve) {
       item->destruct();
     }
     allocator->destroy(item);
@@ -402,7 +402,7 @@ inline void UnboundedPool<T, POLICY>::borrow(size_t n, const F& f) const {
       auto count = std::max<size_t>(storage->items.size(), 32);
       for (size_t j = 0; j < count; j++) {
         auto item = allocator->create<Item>();
-        if constexpr (POLICY == PoolPolicy::Preserve) {
+        if (POLICY == PoolPolicy::Preserve) {
           item->construct();
         }
         storage->items.push_back(item);
@@ -413,7 +413,7 @@ inline void UnboundedPool<T, POLICY>::borrow(size_t n, const F& f) const {
 
     auto item = storage->free;
     storage->free = storage->free->next;
-    if constexpr (POLICY == PoolPolicy::Reconstruct) {
+    if (POLICY == PoolPolicy::Reconstruct) {
       item->construct();
     }
     f(std::move(Loan(item, storage)));
@@ -422,7 +422,7 @@ inline void UnboundedPool<T, POLICY>::borrow(size_t n, const F& f) const {
 
 template <typename T, PoolPolicy POLICY>
 void UnboundedPool<T, POLICY>::Storage::return_(Item* item) {
-  if constexpr (POLICY == PoolPolicy::Reconstruct) {
+  if (POLICY == PoolPolicy::Reconstruct) {
     item->destruct();
   }
   marl::lock lock(mutex);
