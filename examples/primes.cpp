@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <math.h>
+#include <stdio.h>
 
 // searchMax defines the upper limit on primes to find.
 constexpr int searchMax = 10000000;
