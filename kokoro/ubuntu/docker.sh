@@ -29,7 +29,7 @@ function status {
 . /bin/using.sh # Declare the bash `using` function for configuring toolchains.
 
 status "Setting up environment"
-using gcc-9 # Always update gcc so we get a newer standard library.
+using gcc-10 # Always update gcc so we get a newer standard library.
 
 if [ "$BUILD_SYSTEM" == "cmake" ]; then
     using cmake-3.17.2
