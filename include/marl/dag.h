@@ -24,6 +24,12 @@
 #include "scheduler.h"
 #include "waitgroup.h"
 
+#if __cplusplus > 201703L
+#define CAPTURE_THIS , this
+#else
+#define CAPTURE_THIS
+#endif
+
 namespace marl {
 namespace detail {
 using DAGCounter = std::atomic<uint32_t>;
@@ -188,7 +194,7 @@ void DAGBase<T>::invoke(RunContext* ctx, NodeIndex nodeIdx, WaitGroup* wg) {
         // reference to a value. This ensures that the WaitGroup isn't dropped
         // while in use.
         schedule(
-            [=](WaitGroup wg) {
+            [= CAPTURE_THIS](WaitGroup wg) {
               invoke(ctx, toInvoke, &wg);
               wg.done();
             },
@@ -406,5 +412,7 @@ void DAG<void>::run(Allocator* allocator /* = Allocator::Default */) {
 }
 
 }  // namespace marl
+
+#undef CAPTURE_THIS
 
 #endif  // marl_dag_h
