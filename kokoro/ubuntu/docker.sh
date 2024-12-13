@@ -29,10 +29,10 @@ function status {
 . /bin/using.sh # Declare the bash `using` function for configuring toolchains.
 
 status "Setting up environment"
-using gcc-9 # Always update gcc so we get a newer standard library.
+using gcc-13 # Always update gcc so we get a newer standard library.
 
 if [ "$BUILD_SYSTEM" == "cmake" ]; then
-    using cmake-3.17.2
+    using cmake-3.31.2
 
     SRC_DIR=$(pwd)
     BUILD_DIR=/tmp/marl-build

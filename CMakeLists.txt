@@ -356,6 +356,12 @@ if(MARL_BUILD_TESTS)
         ${MARL_GOOGLETEST_DIR}/googlemock/src/gmock-all.cc
     )
 
+    # Disable warnings for third party code
+    set_property(SOURCE
+        ${MARL_GOOGLETEST_DIR}/googletest/src/gtest-all.cc
+        ${MARL_GOOGLETEST_DIR}/googlemock/src/gmock-all.cc
+	APPEND PROPERTY COMPILE_OPTIONS -w)
+
     set(MARL_TEST_INCLUDE_DIR
         ${MARL_GOOGLETEST_DIR}/googletest/include/
         ${MARL_GOOGLETEST_DIR}/googlemock/include/
