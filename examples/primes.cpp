@@ -20,6 +20,7 @@
 #include "marl/thread.h"
 #include "marl/ticket.h"
 
+#include <cstdio>
 #include <vector>
 
 #include <math.h>

@@ -48,6 +48,14 @@
               "fiber %d was in state %s, but expected %s", (int)FIBER->id, \
               Fiber::toString(FIBER->state), Fiber::toString(STATE))
 
+// In C++20, lambda capture [=] will not also capture 'this'. Do it explicitly
+// if using C++20
+#if __cplusplus > 201703L
+#define CAPTURE_THIS , this
+#else
+#define CAPTURE_THIS
+#endif
+
 namespace {
 
 #if ENABLE_DEBUG_LOGGING
@@ -367,7 +375,7 @@ void Scheduler::Worker::start() {
       auto allocator = scheduler->cfg.allocator;
       auto& affinityPolicy = scheduler->cfg.workerThread.affinityPolicy;
       auto affinity = affinityPolicy->get(id, allocator);
-      thread = Thread(std::move(affinity), [=, this] {
+      thread = Thread(std::move(affinity), [= CAPTURE_THIS] {
         Thread::setName("Thread<%.2d>", int(id));
 
         if (auto const& initFunc = scheduler->cfg.workerThread.initializer) {

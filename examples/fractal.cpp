@@ -22,7 +22,7 @@
 
 #include <fstream>
 
-#include <math.h>
+#include <cmath>
 #include <stdint.h>
 
 // A color formed from a red, green and blue component.
