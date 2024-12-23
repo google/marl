@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.22.1)
 
 include(cmake/parse_version.cmake)
 parse_version("${CMAKE_CURRENT_SOURCE_DIR}/CHANGES.md" MARL)
@@ -178,19 +178,6 @@ if(NOT MSVC)
         ${MARL_SRC_DIR}/osfiber_x64.c
         ${MARL_SRC_DIR}/osfiber_x86.c
         ${MARL_SRC_DIR}/osfiber_emscripten.cpp
-    )
-    # CMAKE_OSX_ARCHITECTURES settings aren't propagated to assembly files when
-    # building for Apple platforms (https://gitlab.kitware.com/cmake/cmake/-/issues/20771),
-    # we treat assembly files as C files to work around this bug.
-    set_source_files_properties(
-        ${MARL_SRC_DIR}/osfiber_asm_aarch64.S
-        ${MARL_SRC_DIR}/osfiber_asm_arm.S
-        ${MARL_SRC_DIR}/osfiber_asm_loongarch64.S
-        ${MARL_SRC_DIR}/osfiber_asm_mips64.S
-        ${MARL_SRC_DIR}/osfiber_asm_ppc64.S
-        ${MARL_SRC_DIR}/osfiber_asm_x64.S
-        ${MARL_SRC_DIR}/osfiber_asm_x86.S
-        PROPERTIES LANGUAGE C
     )
 endif(NOT MSVC)
 
