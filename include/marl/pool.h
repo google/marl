@@ -86,7 +86,10 @@ class Pool {
     MARL_NO_EXPORT inline T* get();
 
     // construct() calls the constructor on the item's data.
-    MARL_NO_EXPORT inline void construct();
+    template <typename... Args>
+    MARL_NO_EXPORT inline void construct(Args&&... args) {
+      new (&data) T(std::forward<Args>(args)...);
+    }
 
     // destruct() calls the destructor on the item's data.
     MARL_NO_EXPORT inline void destruct();
@@ -108,11 +111,6 @@ using Loan = typename Pool<T>::Loan;
 template <typename T>
 T* Pool<T>::Item::get() {
   return reinterpret_cast<T*>(&data);
-}
-
-template <typename T>
-void Pool<T>::Item::construct() {
-  new (&data) T;
 }
 
 template <typename T>
@@ -214,20 +212,58 @@ class BoundedPool : public Pool<T> {
 
   // borrow() borrows a single item from the pool, blocking until an item is
   // returned if the pool is empty.
-  MARL_NO_EXPORT inline Loan borrow() const;
+  template <typename... Args>
+  MARL_NO_EXPORT inline Loan borrow(Args&&... args) const {
+    static_assert((sizeof...(Args) == 0) || (POLICY != PoolPolicy::Preserve), "Arguments not supported with Preserve policy!");
+    marl::lock lock(storage->mutex);    
+    storage->returned.wait(lock, [&] { return storage->free != nullptr; });
+    auto item = storage->free;
+    storage->free = storage->free->next;
+    if (POLICY == PoolPolicy::Reconstruct) {
+      item->construct(std::forward<Args>(args)...);
+    }
+    return Loan(item, storage);
+  }
 
-  // borrow() borrows count items from the pool, blocking until there are at
+  // borrowList() borrows count items from the pool, blocking until there are at
   // least count items in the pool. The function f() is called with each
   // borrowed item.
   // F must be a function with the signature: void(T&&)
-  template <typename F>
-  MARL_NO_EXPORT inline void borrow(size_t count, const F& f) const;
+  template <typename F, typename... Args>
+  MARL_NO_EXPORT inline void borrowList(size_t count, const F& f, Args&&... args) const {
+    marl::lock lock(storage->mutex);
+    for (size_t i = 0; i < count; i++) {
+      storage->returned.wait(lock, [&] { return storage->free != nullptr; });
+      auto item = storage->free;
+      storage->free = storage->free->next;
+      if (POLICY == PoolPolicy::Reconstruct) {
+        item->construct(std::forward<Args>(args)...);
+      }
+      f(std::move(Loan(item, storage)));
+    }
+  }
 
   // tryBorrow() attempts to borrow a single item from the pool without
   // blocking.
   // The boolean of the returned pair is true on success, or false if the pool
   // is empty.
-  MARL_NO_EXPORT inline std::pair<Loan, bool> tryBorrow() const;
+  template <typename... Args>
+  MARL_NO_EXPORT inline std::pair<Loan, bool> tryBorrow(Args&&... args) const {
+    Item* item = nullptr;
+    {
+      marl::lock lock(storage->mutex);
+      if (storage->free == nullptr) {
+        return std::make_pair(Loan(), false);
+      }
+      item = storage->free;
+      storage->free = storage->free->next;
+      item->pool = this;
+    }
+    if (POLICY == PoolPolicy::Reconstruct) {
+      item->construct(std::forward<Args>(args)...);
+    }
+    return std::make_pair(Loan(item, storage), true);
+  }
 
  private:
   class Storage : public Pool<T>::Storage {
@@ -235,11 +271,6 @@ class BoundedPool : public Pool<T> {
     MARL_NO_EXPORT inline Storage(Allocator* allocator);
     MARL_NO_EXPORT inline ~Storage();
     MARL_NO_EXPORT inline void return_(Item*) override;
-    // We cannot copy this as the Item pointers would be shared and
-    // deleted at a wrong point. We cannot move this because we return
-    // pointers into items[N].
-    MARL_NO_EXPORT inline Storage(const Storage&) = delete;
-    MARL_NO_EXPORT inline Storage& operator=(const Storage&) = delete;
 
     Item items[N];
     marl::mutex mutex;
@@ -274,48 +305,6 @@ template <typename T, int N, PoolPolicy POLICY>
 BoundedPool<T, N, POLICY>::BoundedPool(
     Allocator* allocator /* = Allocator::Default */)
     : storage(allocator->make_shared<Storage>(allocator)) {}
-
-template <typename T, int N, PoolPolicy POLICY>
-typename BoundedPool<T, N, POLICY>::Loan BoundedPool<T, N, POLICY>::borrow()
-    const {
-  Loan out;
-  borrow(1, [&](Loan&& loan) { out = std::move(loan); });
-  return out;
-}
-
-template <typename T, int N, PoolPolicy POLICY>
-template <typename F>
-void BoundedPool<T, N, POLICY>::borrow(size_t n, const F& f) const {
-  marl::lock lock(storage->mutex);
-  for (size_t i = 0; i < n; i++) {
-    storage->returned.wait(lock, [&] { return storage->free != nullptr; });
-    auto item = storage->free;
-    storage->free = storage->free->next;
-    if (POLICY == PoolPolicy::Reconstruct) {
-      item->construct();
-    }
-    f(std::move(Loan(item, storage)));
-  }
-}
-
-template <typename T, int N, PoolPolicy POLICY>
-std::pair<typename BoundedPool<T, N, POLICY>::Loan, bool>
-BoundedPool<T, N, POLICY>::tryBorrow() const {
-  Item* item = nullptr;
-  {
-    marl::lock lock(storage->mutex);
-    if (storage->free == nullptr) {
-      return std::make_pair(Loan(), false);
-    }
-    item = storage->free;
-    storage->free = storage->free->next;
-    item->pool = this;
-  }
-  if (POLICY == PoolPolicy::Reconstruct) {
-    item->construct();
-  }
-  return std::make_pair(Loan(item, storage), true);
-}
 
 template <typename T, int N, PoolPolicy POLICY>
 void BoundedPool<T, N, POLICY>::Storage::return_(Item* item) {
@@ -366,11 +355,6 @@ class UnboundedPool : public Pool<T> {
     MARL_NO_EXPORT inline Storage(Allocator* allocator);
     MARL_NO_EXPORT inline ~Storage();
     MARL_NO_EXPORT inline void return_(Item*) override;
-    // We cannot copy this as the Item pointers would be shared and
-    // deleted at a wrong point. We could move this but would have to take
-    // extra care no Item pointers are left in the moved-out object.
-    MARL_NO_EXPORT inline Storage(const Storage&) = delete;
-    MARL_NO_EXPORT inline Storage& operator=(const Storage&) = delete;
 
     Allocator* allocator;
     marl::mutex mutex;
