@@ -17,7 +17,7 @@ REM limitations under the License.
 SETLOCAL ENABLEDELAYEDEXPANSION
 
 SET BUILD_ROOT=%cd%
-SET PATH=C:\python36;C:\Program Files\cmake\bin;%PATH%
+SET PATH=C:\python312;C:\cmake-3.31.2\bin;%PATH%
 SET ROOT_DIR=%cd%\github\marl
 SET BUILD_DIR=%ROOT_DIR%\build
 
