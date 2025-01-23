@@ -56,7 +56,7 @@ if [ "$BUILD_SYSTEM" == "cmake" ]; then
         COMMON_CMAKE_FLAGS+=" -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake"
     else # !ndk
         if [ "$BUILD_TOOLCHAIN" == "clang" ]; then
-            using clang-10.0.0
+            using clang-13.0.1
         fi
         if [ "$BUILD_TARGET_ARCH" == "x86" ]; then
             COMMON_CMAKE_FLAGS+=" -DCMAKE_CXX_FLAGS=-m32"
