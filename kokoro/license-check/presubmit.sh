@@ -19,8 +19,8 @@ set -e # Fail on any error.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd )"
 ROOT_DIR="$( cd "${SCRIPT_DIR}/../.." >/dev/null 2>&1 && pwd )"
 
-docker run --rm -i \
+exec docker run --rm -i \
   --volume "${ROOT_DIR}:${ROOT_DIR}" \
   --workdir "${ROOT_DIR}" \
-  --entrypoint "${SCRIPT_DIR}/presubmit-docker.sh" \
-  "gcr.io/shaderc-build/radial-build:latest"
+  --entrypoint /bin/license-checker \
+  us-east4-docker.pkg.dev/shaderc-build/radial-docker/ubuntu-24.04-amd64/license-checker
