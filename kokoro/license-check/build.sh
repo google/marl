@@ -16,4 +16,10 @@
 
 set -e # Fail on any error.
 
-license-checker
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd )"
+ROOT_DIR="$( cd "${SCRIPT_DIR}/../.." >/dev/null 2>&1 && pwd )"
+
+docker run --rm -i \
+  --volume "${ROOT_DIR}:${ROOT_DIR}:ro" \
+  --workdir "${ROOT_DIR}" \
+  us-east4-docker.pkg.dev/shaderc-build/radial-docker/ubuntu-24.04-amd64/license-checker
