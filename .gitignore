@@ -6,3 +6,4 @@
 bazel-*
 CMakeSettings.json
 /.idea/
+MODULE.bazel.lock

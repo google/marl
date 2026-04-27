@@ -146,19 +146,18 @@ if [ "$BUILD_SYSTEM" == "cmake" ]; then
 
 elif [ "$BUILD_SYSTEM" == "bazel" ]; then
     # Get bazel
-    BAZEL_DIR="${ROOT_DIR}/bazel"
-    curl -L -k -O -s https://github.com/bazelbuild/bazel/releases/download/0.29.1/bazel-0.29.1-installer-darwin-x86_64.sh
-    mkdir "${BAZEL_DIR}"
-    sh bazel-0.29.1-installer-darwin-x86_64.sh --prefix="${BAZEL_DIR}"
-    rm bazel-0.29.1-installer-darwin-x86_64.sh
-    BAZEL="${BAZEL_DIR}/bin/bazel"
+    BAZEL_VER=7.4.0
+    BAZEL=bazel-$BAZEL_VER-darwin-$(uname -m)
+    gcloud config set auth/disable_credentials True
+    gcloud storage cp gs://bazel/$BAZEL_VER/release/$BAZEL .
+    chmod +x $BAZEL
 
     show_cmds
-        "${BAZEL}" test //:tests --test_output=all
-        "${BAZEL}" run //examples:fractal
-        "${BAZEL}" run //examples:hello_task
-        "${BAZEL}" run //examples:primes > /dev/null
-        "${BAZEL}" run //examples:tasks_in_tasks
+        "./${BAZEL}" test //:tests --test_output=all
+        "./${BAZEL}" run //examples:fractal
+        "./${BAZEL}" run //examples:hello_task
+        "./${BAZEL}" run //examples:primes > /dev/null
+        "./${BAZEL}" run //examples:tasks_in_tasks
     hide_cmds
 else
     status "Unknown build system: $BUILD_SYSTEM"
