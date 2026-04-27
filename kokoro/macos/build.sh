@@ -37,6 +37,32 @@ if [ "$BUILD_SYSTEM" == "cmake" ]; then
     SRC_DIR=$(pwd)
     BUILD_DIR=/tmp/marl-build
     INSTALL_DIR=${BUILD_DIR}/install
+    CMAKE_DIR=/tmp/cmake-install
+    CMAKE_VER=4.3.2
+
+    # clean
+    # Ensures the given directory exists and is empty
+    function clean {
+        if [[ -d "$1" ]]; then
+            rm -fr "$1"
+        fi
+        mkdir -p "$1"
+    }
+
+    # The macos Kokoro bots don't have cmake.
+    clean $CMAKE_DIR
+    status "Download cmake"
+    show_cmds
+      pushd $CMAKE_DIR
+      curl -L -o tarball.tar.gz https://github.com/Kitware/CMake/releases/download/v$CMAKE_VER/cmake-$CMAKE_VER-macos-universal.tar.gz
+      tar xf tarball.tar.gz
+      popd
+    hide_cmds
+    CMAKE=$CMAKE_DIR/cmake-$CMAKE_VER-macos-universal/CMake.app/Contents/bin/cmake
+    if [[ ! -x $CMAKE ]]; then
+      echo "Failed to download cmake"
+      exit 1
+    fi
 
     COMMON_CMAKE_FLAGS=""
     COMMON_CMAKE_FLAGS+=" -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
@@ -57,15 +83,6 @@ if [ "$BUILD_SYSTEM" == "cmake" ]; then
         COMMON_CMAKE_FLAGS+=" -DMARL_TSAN=1"
     fi
 
-    # clean
-    # Ensures BUILD_DIR is empty.
-    function clean {
-        if [ -d ${BUILD_DIR} ]; then
-            rm -fr ${BUILD_DIR}
-        fi
-        mkdir ${BUILD_DIR}
-    }
-
     # build <description> <flags>
     # Cleans build directory and performs a build using the provided CMake flags.
     function build {
@@ -73,10 +90,10 @@ if [ "$BUILD_SYSTEM" == "cmake" ]; then
         CMAKE_FLAGS=$2
 
         status "Building ${DESCRIPTION}"
-        clean
+        clean ${BUILD_DIR}
         cd ${BUILD_DIR}
         show_cmds
-            cmake ${SRC_DIR} ${CMAKE_FLAGS} ${COMMON_CMAKE_FLAGS}
+            $CMAKE ${SRC_DIR} ${CMAKE_FLAGS} ${COMMON_CMAKE_FLAGS}
             make --jobs=$(sysctl -n hw.logicalcpu)
         hide_cmds
     }
